@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/geraldthewes/scythica/sdsmeta"
 	"os"
 )
 
@@ -19,4 +20,15 @@ func main() {
 	if len(args) < 2 {
 		usage()
 	}
+	conf := args[0]
+	location := args[1]
+
+	// read configuration
+	cfg, err := sdsmeta.ReadYAMLConfigurationFromFile(conf)
+	if err != nil {
+		panic(err)
+	}
+
+	err = sdsmeta.CreateSDataSet(&cfg, location)
+
 }

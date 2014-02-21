@@ -1,0 +1,10 @@
+columns:
+- colname: dt
+  coltype: Date
+- colname: value
+  coltype: character
+keyspace:
+  key_size: 8192
+  nodes: 2
+  rows: 1000
+  partitionby: dt

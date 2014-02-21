@@ -1,19 +1,21 @@
-package scythica
+package sdsmeta
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	//"github.com/pranavraja/zen"
 )
 
 func TestOutput(t *testing.T) {
 	cfg := Sdsmeta{
-		Columns: []Sdscolumndef{{"Date", "dt"}, {"character", "value"}},
+		Columns: []Sdscolumndef{{"dt", "Date"}, {"value", "character"}},
 		Keyspace: Sdskeyspace{
 			Key_size:    8192,
 			Nodes:       2,
+			Rows:        1000,
 			Partitionby: "dt"}}
-	output, err := WriteYAMLConfiguration(&cfg)
+	output, err := OutputYAMLConfiguration(&cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -24,13 +26,14 @@ func TestOutput(t *testing.T) {
 
 func TestInput(t *testing.T) {
 	yaml := `columns:
-- colname: Date
-  coltype: dt
-- colname: character
-  coltype: value
+- colname: dt
+  coltype: Date
+- colname: value
+  coltype: character
 keyspace:
   key_size: 8192
   nodes: 2
+  rows: 1000
   partitionby: dt`
 
 	cfg, err := ReadYAMLConfiguration(yaml)
@@ -38,8 +41,33 @@ keyspace:
 		panic(err)
 	}
 
-	output, err := WriteYAMLConfiguration(&cfg)
+	output, err := OutputYAMLConfiguration(&cfg)
 	s := string(output)
 	fmt.Printf(s)
+
+	var file *os.File
+	file, err = os.Create("test-out.yaml")
+	if err != nil {
+		panic(err)
+	}
+	//var n int
+	_, err = file.Write(output)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+}
+
+func TestRead(t *testing.T) {
+	_, err := ReadYAMLConfigurationFromFile("test-out.yaml")
+	if err != nil {
+		panic(err)
+	}
 
 }
