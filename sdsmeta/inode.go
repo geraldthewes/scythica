@@ -18,11 +18,19 @@ type Sdscolumndef struct {
 	Coltype string
 }
 
+// Hold information on Scythica Data Set
 type Sdsmeta struct {
 	Columns  []Sdscolumndef
 	Keyspace Sdskeyspace
 }
 
+// Hold Runtime Information
+type SDataFrame struct {
+	CfgFile  Sdsmeta
+	Location string
+}
+
+// Max Configuration File Size
 const max_cfg = 8192
 
 // Read data set configuration information from string
@@ -80,7 +88,35 @@ func OutputYAMLConfiguration(cfgMeta *Sdsmeta) (out []byte, err error) {
 	return out, err
 }
 
-// Create a New SDS File.
+// Write configuration file to file
+func WriteYAMLConfigurationToFile(cfgMeta *Sdsmeta, outFile string) (err error) {
+	var file *os.File
+	file, err = os.Create(outFile)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err = file.Close(); err != nil {
+			// should log something return err
+		}
+	}()
+
+	var output []byte
+	output, err = OutputYAMLConfiguration(cfgMeta)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Write(output)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Create a New Empty SDS File.
 // Requires the directory to be empty
 func CreateSDataSet(cfgMeta *Sdsmeta, location string) (err error) {
 
@@ -90,8 +126,19 @@ func CreateSDataSet(cfgMeta *Sdsmeta, location string) (err error) {
 		return err
 	}
 
-	//
+	// Save configuration file
+	cfgFile := location + "/schema.cfg"
+	err = WriteYAMLConfigurationToFile(cfgMeta, cfgFile)
+	if err != nil {
+		return err
+	}
+
+	// Create data subdirectory
+	dataDir := location + "/data"
+	err = os.Mkdir(dataDir, 0774)
+	if err != nil {
+		return err
+	}
 
 	return nil
-
 }
