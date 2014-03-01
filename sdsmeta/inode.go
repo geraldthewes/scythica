@@ -7,15 +7,15 @@ import (
 )
 
 type Sdskeyspace struct {
-	Key_size    int32
-	Nodes       int32
-	Rows        int32
-	Partitionby string
+	Key_size int32
+	Nodes    int32
+	Rows     int32
 }
 
 type Sdscolumndef struct {
-	Colname string
-	Coltype string
+	Colname    string
+	Coltype    string
+	Attributes string "attributes,omitempty"
 }
 
 // Hold information on Scythica Data Set

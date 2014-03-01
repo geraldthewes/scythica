@@ -1,10 +1,13 @@
 columns:
 - colname: Year
   coltype: integer
+  attributes: partition
 - colname: Month
   coltype: integer
+  attributes: partition
 - colname: DayOfMonth
   coltype: integer
+  attributes: partition
 - colname: DepTime
   coltype: character
 - colname: CRSDepTime

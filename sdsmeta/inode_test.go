@@ -9,12 +9,11 @@ import (
 
 func TestOutput(t *testing.T) {
 	cfg := Sdsmeta{
-		Columns: []Sdscolumndef{{"dt", "Date"}, {"value", "character"}},
+		Columns: []Sdscolumndef{{"dt", "Date", "partition"}, {"value", "character", ""}},
 		Keyspace: Sdskeyspace{
-			Key_size:    8192,
-			Nodes:       2,
-			Rows:        1000,
-			Partitionby: "dt"}}
+			Key_size: 8192,
+			Nodes:    2,
+			Rows:     1000}}
 	output, err := OutputYAMLConfiguration(&cfg)
 	if err != nil {
 		panic(err)
@@ -28,13 +27,13 @@ func TestInput(t *testing.T) {
 	yaml := `columns:
 - colname: dt
   coltype: Date
+  attributes: partition
 - colname: value
   coltype: character
 keyspace:
   key_size: 8192
   nodes: 2
-  rows: 1000
-  partitionby: dt`
+  rows: 1000`
 
 	cfg, err := ReadYAMLConfiguration(yaml)
 	if err != nil {
@@ -42,6 +41,9 @@ keyspace:
 	}
 
 	output, err := OutputYAMLConfiguration(&cfg)
+	if err != nil {
+		panic(err)
+	}
 	s := string(output)
 	fmt.Printf(s)
 
