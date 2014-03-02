@@ -25,30 +25,14 @@ func main() {
 	csvFile := args[2]
 
 	// read configuration
-	cfg, err := sdsmeta.ReadYAMLConfigurationFromFile(conf)
+	schema, err := sdsmeta.ReadYAMLConfigurationFromFile(conf)
 	if err != nil {
 		panic(err)
 	}
 
-	err = createFromCsv(cfg, location, csvFile)
+	err = sdsmeta.CreateFromCsv(schema, location, csvFile)
 	if err != nil {
 		panic(err)
 	}
-
-}
-
-// Created SDS Dataframe from CSV file
-func createFromCsv(cfg sdsmeta.Sdsmeta, location string, csvFile string) (err error) {
-	var df sdsmeta.SDataFrame
-	df.CfgFile = cfg
-	df.Location = location
-
-	err = sdsmeta.CreateSDataSet(&df.CfgFile, location)
-	if err != nil {
-		return err
-	}
-
-	sdsmeta.LoadCsv(&df, csvFile)
-	return nil
 
 }

@@ -4,12 +4,14 @@ import (
 	//"fmt"
 	"launchpad.net/goyaml"
 	"os"
+	"strings"
 )
 
 type Sdskeyspace struct {
-	Key_size int32
-	Nodes    int32
-	Rows     int32
+	Key_size     int32
+	Nodes        int32
+	Rows         int32
+	PartitionFmt string "partionfmt,omitempty"
 }
 
 type Sdscolumndef struct {
@@ -26,12 +28,29 @@ type Sdsmeta struct {
 
 // Hold Runtime Information
 type SDataFrame struct {
-	CfgFile  Sdsmeta
-	Location string
+	Schema         Sdsmeta
+	Location       string
+	partitionIndex []int
 }
 
 // Max Configuration File Size
 const max_cfg = 8192
+const PKEY = "pkey"
+
+const SDF_Integer = "integer"
+const SDF_Float = "float"
+const SDF_Double = "double"
+const SDF_Date = "date"
+const SDF_Character = "character"
+const SDF_Factor = "factor"
+
+var SDF_ColType_Keywords = map[string]int{
+	SDF_Integer:   1,
+	SDF_Float:     2,
+	SDF_Double:    3,
+	SDF_Date:      4,
+	SDF_Character: 5,
+	SDF_Factor:    6}
 
 // Read data set configuration information from string
 func ReadYAMLConfiguration(cfgstring string) (cfg Sdsmeta, err error) {
@@ -141,4 +160,40 @@ func CreateSDataSet(cfgMeta *Sdsmeta, location string) (err error) {
 	}
 
 	return nil
+}
+
+// Create list of offsets for partition
+func (sdf *SDataFrame) createPartitionIndex() (pkeys int) {
+	pkeys = 0
+	for _, element := range sdf.Schema.Columns {
+		// Simple test for now
+		if strings.Contains(element.Attributes, PKEY) {
+			pkeys++
+		}
+	}
+
+	// Now create the index
+	i := 0
+	sdf.partitionIndex = make([]int, pkeys)
+	for index, element := range sdf.Schema.Columns {
+		// Simple test for now
+		if strings.Contains(element.Attributes, PKEY) {
+			sdf.partitionIndex[i] = index
+			i++
+		}
+	}
+
+	return pkeys
+}
+
+// Verify Column Types
+func (sdm *Sdsmeta) verifyColumnTypes() (pos int) {
+
+	for index, element := range sdm.Columns {
+		if SDF_ColType_Keywords[element.Coltype] == 0 {
+			return index
+		}
+	}
+
+	return -1 // No error
 }
