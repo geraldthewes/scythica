@@ -1,7 +1,7 @@
 package sdsmeta
 
 import (
-	//"fmt"
+	"fmt"
 	"launchpad.net/goyaml"
 	"os"
 	"strings"
@@ -33,6 +33,10 @@ type SDataFrame struct {
 	partitionIndex []int
 }
 
+type SError struct {
+	msg string
+}
+
 // Max Configuration File Size
 const max_cfg = 8192
 const PKEY = "pkey"
@@ -43,6 +47,7 @@ const SDF_Double = "double"
 const SDF_Date = "date"
 const SDF_Character = "character"
 const SDF_Factor = "factor"
+const SDF_Boolean = "boolean"
 
 var SDF_ColType_Keywords = map[string]int{
 	SDF_Integer:   1,
@@ -50,7 +55,12 @@ var SDF_ColType_Keywords = map[string]int{
 	SDF_Double:    3,
 	SDF_Date:      4,
 	SDF_Character: 5,
-	SDF_Factor:    6}
+	SDF_Factor:    6,
+	SDF_Boolean:   7}
+
+func (e *SError) Error() string {
+	return e.msg
+}
 
 // Read data set configuration information from string
 func ReadYAMLConfiguration(cfgstring string) (cfg Sdsmeta, err error) {
@@ -137,7 +147,16 @@ func WriteYAMLConfigurationToFile(cfgMeta *Sdsmeta, outFile string) (err error) 
 
 // Create a New Empty SDS File.
 // Requires the directory to be empty
-func CreateSDataSet(cfgMeta *Sdsmeta, location string) (err error) {
+func CreateSDataSet(schema *Sdsmeta, location string) (err error) {
+
+	pos := schema.verifyColumnTypes()
+	if pos >= 0 {
+		var e SError
+		e.msg = fmt.Sprintf("Invalid column type for %s in position %d",
+			schema.Columns[pos].Colname,
+			pos)
+		return &e // $$$ Does this really work?
+	}
 
 	// Create Top Level Directory
 	err = os.Mkdir(location, 0774)
@@ -147,7 +166,7 @@ func CreateSDataSet(cfgMeta *Sdsmeta, location string) (err error) {
 
 	// Save configuration file
 	cfgFile := location + "/schema.cfg"
-	err = WriteYAMLConfigurationToFile(cfgMeta, cfgFile)
+	err = WriteYAMLConfigurationToFile(schema, cfgFile)
 	if err != nil {
 		return err
 	}

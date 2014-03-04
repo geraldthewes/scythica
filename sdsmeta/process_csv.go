@@ -1,7 +1,9 @@
 package sdsmeta
 
 import (
+	"bytes"
 	"encoding/csv"
+	"fmt"
 	"os"
 )
 
@@ -27,11 +29,19 @@ func matchHeader() (match bool) {
 }
 
 // Create Partition label
-func createPartitionLabel(cfg Sdsmeta, row []string) (label string) {
+func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 	// Count number of columns in the partition
-
+	var buffer bytes.Buffer
+	sep := ""
+	for _, col := range sdf.partitionIndex {
+		// How to append strings?
+		buffer.WriteString(sep)
+		buffer.WriteString(row[col])
+		fmt.Printf("(%d,%s)", col, row[col])
+		sep = "-"
+	}
 	// Then create the slice
-	return ""
+	return buffer.String()
 }
 
 // Load CSV file in df Data Frame
@@ -63,13 +73,15 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 
 	// Read data
 	for {
-		//var row []string
-		_, err = csvReader.Read()
+		var row []string
+		row, err = csvReader.Read()
 		if err != nil {
 			return err
 		}
 
 		// Extract partition key
+		pkey := createPartitionLabel(df, row)
+		fmt.Printf("pkey=%s\n", pkey)
 	}
 
 	return nil

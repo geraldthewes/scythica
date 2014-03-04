@@ -13,7 +13,7 @@ columns:
 - colname: CRSDepTime
   coltype: character
 - colname: ArrTime
-  coltype: characte
+  coltype: character
 - colname: CRSArrTime
   coltype: character
 - colname: UniqueCarrier
