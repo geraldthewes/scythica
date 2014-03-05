@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"strings"
 )
 
 // Created SDS Dataframe from CSV file
@@ -36,7 +37,13 @@ func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 	for _, col := range sdf.partitionIndex {
 		// How to append strings?
 		buffer.WriteString(sep)
+		if strings.Contains(sdf.Schema.Columns[col].Attributes, PKEY_0PAD2) {
+			if len(row[col]) == 1 {
+				buffer.WriteString("0")
+			}
+		}
 		buffer.WriteString(row[col])
+
 		fmt.Printf("(%d,%s)", col, row[col])
 		sep = "-"
 	}

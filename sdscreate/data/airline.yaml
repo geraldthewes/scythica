@@ -1,13 +1,13 @@
 columns:
 - colname: Year
   coltype: integer
-  attributes: partition
+  attributes: pkey
 - colname: Month
   coltype: integer
-  attributes: partition
+  attributes: pkey0p2
 - colname: DayOfMonth
   coltype: integer
-  attributes: partition
+  attributes: pkey0p2
 - colname: DepTime
   coltype: character
 - colname: CRSDepTime
@@ -27,7 +27,7 @@ columns:
 - colname: AirTime
   coltype: integer
 - colname: ArrDelay
-  coltype: intger
+  coltype: integer
 - colname: DepDelay
   coltype: integer
 - colname: Origin

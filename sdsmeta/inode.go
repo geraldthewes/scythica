@@ -40,6 +40,7 @@ type SError struct {
 // Max Configuration File Size
 const max_cfg = 8192
 const PKEY = "pkey"
+const PKEY_0PAD2 = "pkey0p2"
 
 const SDF_Integer = "integer"
 const SDF_Float = "float"
@@ -196,7 +197,8 @@ func (sdf *SDataFrame) createPartitionIndex() (pkeys int) {
 	sdf.partitionIndex = make([]int, pkeys)
 	for index, element := range sdf.Schema.Columns {
 		// Simple test for now
-		if strings.Contains(element.Attributes, PKEY) {
+		if strings.Contains(element.Attributes, PKEY) ||
+			strings.Contains(element.Attributes, PKEY_0PAD2) {
 			sdf.partitionIndex[i] = index
 			i++
 		}
