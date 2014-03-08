@@ -101,6 +101,22 @@ func TestColTypes(t *testing.T) {
 	})
 }
 
+func TestDFMeta(t *testing.T) {
+	Desc(t, "data freame meta functions", func(it It) {
+
+		sdf := SDataFrame{
+			Schema:         cfg,
+			Location:       "",
+			partitionIndex: nil}
+
+		it("ncol", func(expect Expect) {
+			n := sdf.ncol()
+			expect(n).ToEqual(2)
+		})
+
+	})
+}
+
 func TestPartitions(t *testing.T) {
 	Desc(t, "partitions simple", func(it It) {
 

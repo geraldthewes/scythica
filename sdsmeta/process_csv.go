@@ -3,7 +3,7 @@ package sdsmeta
 import (
 	"bytes"
 	"encoding/csv"
-	"fmt"
+	//"fmt"
 	"os"
 	"strings"
 )
@@ -44,7 +44,7 @@ func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 		}
 		buffer.WriteString(row[col])
 
-		fmt.Printf("(%d,%s)", col, row[col])
+		//fmt.Printf("(%d,%s)", col, row[col])
 		sep = "-"
 	}
 	// Then create the slice
@@ -77,8 +77,10 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 	}
 	matchHeader()
 	df.createPartitionIndex()
+	//dataDir := df.Location + DF_DATA_DIR + "/"
 
 	// Read data
+	pkey := "-nil-"
 	for {
 		var row []string
 		row, err = csvReader.Read()
@@ -86,9 +88,15 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 			return err
 		}
 
-		// Extract partition key
-		pkey := createPartitionLabel(df, row)
-		fmt.Printf("pkey=%s\n", pkey)
+		// Extract partition key and create partition if needed
+		npkey := createPartitionLabel(df, row)
+		//fmt.Printf("pkey=%s\n", npkey)
+		if npkey != pkey {
+			pkey = npkey
+			//var buffers SDataFramePartitionCols
+			//buffers, err = df.CreatePartition(pkey)
+		}
+
 	}
 
 	return nil

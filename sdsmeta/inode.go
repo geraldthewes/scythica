@@ -59,6 +59,9 @@ var SDF_ColType_Keywords = map[string]int{
 	SDF_Factor:    6,
 	SDF_Boolean:   7}
 
+const DF_SCHEMA = "/schema.cfg"
+const DF_DATA_DIR = "/data"
+
 func (e *SError) Error() string {
 	return e.msg
 }
@@ -166,14 +169,14 @@ func CreateSDataSet(schema *Sdsmeta, location string) (err error) {
 	}
 
 	// Save configuration file
-	cfgFile := location + "/schema.cfg"
+	cfgFile := location + DF_SCHEMA
 	err = WriteYAMLConfigurationToFile(schema, cfgFile)
 	if err != nil {
 		return err
 	}
 
 	// Create data subdirectory
-	dataDir := location + "/data"
+	dataDir := location + DF_DATA_DIR
 	err = os.Mkdir(dataDir, 0774)
 	if err != nil {
 		return err
@@ -217,4 +220,9 @@ func (sdm *Sdsmeta) verifyColumnTypes() (pos int) {
 	}
 
 	return -1 // No error
+}
+
+// return number of columns
+func (sdf *SDataFrame) ncol() int {
+	return len(sdf.Schema.Columns)
 }
