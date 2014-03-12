@@ -81,9 +81,10 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 
 	// Read data
 	pkey := "-nil-"
+	row := 0
 	for {
 		var row []string
-		row, err = csvReader.Read()
+		record, err = csvReader.Read()
 		if err != nil {
 			return err
 		}
@@ -93,9 +94,13 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 		//fmt.Printf("pkey=%s\n", npkey)
 		if npkey != pkey {
 			pkey = npkey
-			//var buffers SDataFramePartitionCols
-			//buffers, err = df.CreatePartition(pkey)
+			row = 0
+			var buffers SDataFramePartitionCols
+			buffers, err = df.CreatePartition(pkey)
 		}
+
+		buffers.setRow(row, record)
+		row++
 
 	}
 

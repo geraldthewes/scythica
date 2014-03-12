@@ -30,7 +30,26 @@ type Sdsmeta struct {
 type SDataFrame struct {
 	Schema         Sdsmeta
 	Location       string
-	partitionIndex []int
+	partitionIndex []int // index of all partition keys
+	typeIndex      []int // index in type
+}
+
+// Single Buffer for a Partition of a Column
+type SDataFrameColBuffer struct {
+	Column           Sdscolumndef
+	Path             string
+	PartitionKey     string
+	DataBufferInt32  []int32
+	DataBufferFloat  []float32
+	DataBufferDouble []float64
+	DataBufferInt64  []int64
+	DataBufferByte   []byte
+	DataBufferFactor []int32
+	DataBufferBool   []bool
+}
+
+type SDataFramePartitionCols struct {
+	colBuffers []SDataFrameColBuffer
 }
 
 type SError struct {
@@ -49,6 +68,7 @@ const SDF_Date = "date"
 const SDF_Character = "character"
 const SDF_Factor = "factor"
 const SDF_Boolean = "boolean"
+const SDF_Integer64 = "int64"
 
 var SDF_ColType_Keywords = map[string]int{
 	SDF_Integer:   1,
@@ -57,10 +77,12 @@ var SDF_ColType_Keywords = map[string]int{
 	SDF_Date:      4,
 	SDF_Character: 5,
 	SDF_Factor:    6,
-	SDF_Boolean:   7}
+	SDF_Boolean:   7,
+	SDF_Integer64: 8}
 
 const DF_SCHEMA = "/schema.cfg"
 const DF_DATA_DIR = "/data"
+const DF_SEP = "/"
 
 func (e *SError) Error() string {
 	return e.msg
@@ -223,6 +245,60 @@ func (sdm *Sdsmeta) verifyColumnTypes() (pos int) {
 }
 
 // return number of columns
-func (sdf *SDataFrame) ncol() int {
+func (sdf *SDataFrame) Ncol() int {
 	return len(sdf.Schema.Columns)
+}
+
+// return path to partition
+func (sdf *SDataFrame) PartitionPath(pKey string) (path string) {
+	path = sdf.Location + DF_DATA_DIR + DF_SEP + pKey
+	return
+}
+
+// Allocate a column partition buffer
+func (sdf *SDataFrame) AllocateColPartitionBuffer(col Sdscolumndef, pKey string) (colBuffer SDataFrameColBuffer) {
+	colBuffer.PartitionKey = pKey
+	colBuffer.Path = sdf.PartitionPath(pKey)
+	nrows := sdf.Schema.Keyspace.Rows
+	switch SDF_ColType_Keywords[col.Coltype] {
+	case 1:
+		fallthrough
+	case 6:
+		colBuffer.DataBufferInt32 = make([]int32, nrows)
+	case 2:
+		colBuffer.DataBufferFloat = make([]float32, nrows)
+	case 3:
+		colBuffer.DataBufferDouble = make([]float64, nrows)
+	case 4:
+		fallthrough
+	case 8:
+		colBuffer.DataBufferInt64 = make([]int64, nrows)
+	case 5:
+		colBuffer.DataBufferByte = make([]byte, nrows)
+	case 7:
+		colBuffer.DataBufferBool = make([]bool, nrows)
+	default:
+		panic("Unknown column type")
+	}
+	return
+}
+
+// Allocate all column partition buffers
+func (sdf *SDataFrame) AllocateAllColsPartitionBuffer(pKey string) (buffers SDataFramePartitionCols) {
+
+	for index, element := range sdf.Schema.Columns {
+		buffers.colBuffers[index] = sdf.AllocateColPartitionBuffer(element, pKey)
+	}
+	return
+}
+
+// Create Partition
+func (sdf *SDataFrame) CreatePartition(pkey string) (buffers SDataFramePartitionCols, err error) {
+	err = os.Mkdir(sdf.PartitionPath(pkey), 0774)
+	if err != nil {
+		return buffers, err
+	}
+	buffers = sdf.AllocateAllColsPartitionBuffer(pkey)
+	return buffers, nil
+
 }
