@@ -1,7 +1,7 @@
 package sdsmeta
 
 import (
-	//"fmt"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -11,6 +11,8 @@ const DATA_DATA = "../sdscreate/data/airline.csv"
 const DATADS = "airline"
 
 func TestCreate(t *testing.T) {
+	fmt.Printf("TestCreate  CSV\n")
+
 	// Delete existing directory if necessary
 	_ = os.RemoveAll(DATADS)
 

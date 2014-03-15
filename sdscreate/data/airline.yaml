@@ -1,13 +1,15 @@
 columns:
 - colname: Year
-  coltype: integer
+  coltype: int32
   attributes: pkey
 - colname: Month
-  coltype: integer
+  coltype: int32
   attributes: pkey0p2
 - colname: DayOfMonth
-  coltype: integer
+  coltype: int32
   attributes: pkey0p2
+- colname: DayOfWeek
+  coltype: int32
 - colname: DepTime
   coltype: character
 - colname: CRSDepTime
@@ -19,27 +21,27 @@ columns:
 - colname: UniqueCarrier
   coltype: factor
 - colname: FlightNum
-  coltype: integer
+  coltype: int32
 - colname: TailNum
   coltype: factor
 - colname: ActualElapsedTime
-  coltype: integer
+  coltype: int32
 - colname: AirTime
-  coltype: integer
+  coltype: int32
 - colname: ArrDelay
-  coltype: integer
+  coltype: int32
 - colname: DepDelay
-  coltype: integer
+  coltype: int32
 - colname: Origin
   coltype: factor
 - colname: Dest
   coltype: factor
 - colname: Distance
-  coltype: integer
+  coltype: int32
 - colname: TaxiIn
-  coltype: integer
+  coltype: int32
 - colname: TaxiOut
-  coltype: integer
+  coltype: int32
 - colname: Cancelled
   coltype: boolean
 - colname: CancellationCode
@@ -47,15 +49,15 @@ columns:
 - colname: Diverted
   coltype: boolean
 - colname: CarrierDelay
-  coltype: integer
+  coltype: int32
 - colname: WeatherDelay
-  coltype: integer
+  coltype: int32
 - colname: NASDelay
-  coltype: integer
+  coltype: int32
 - colname: SecurityDelay
-  coltype: integer
+  coltype: int32
 - colname: LateAircraftDelay
-  coltype: integer
+  coltype: int32
 keyspace:
   key_size: 8192
   nodes: 1

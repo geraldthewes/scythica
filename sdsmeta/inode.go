@@ -70,15 +70,24 @@ const SDF_Factor = "factor"
 const SDF_Boolean = "boolean"
 const SDF_Integer64 = "int64"
 
+const SDFK_Integer = 1
+const SDFK_Float = 2
+const SDFK_Double = 3
+const SDFK_Date = 4
+const SDFK_Character = 5
+const SDFK_Factor = 6
+const SDFK_Boolean = 7
+const SDFK_Integer64 = 8
+
 var SDF_ColType_Keywords = map[string]int{
-	SDF_Integer:   1,
-	SDF_Float:     2,
-	SDF_Double:    3,
-	SDF_Date:      4,
-	SDF_Character: 5,
-	SDF_Factor:    6,
-	SDF_Boolean:   7,
-	SDF_Integer64: 8}
+	SDF_Integer:   SDFK_Integer,
+	SDF_Float:     SDFK_Float,
+	SDF_Double:    SDFK_Double,
+	SDF_Date:      SDFK_Date,
+	SDF_Character: SDFK_Character,
+	SDF_Factor:    SDFK_Factor,
+	SDF_Boolean:   SDFK_Boolean,
+	SDF_Integer64: SDFK_Integer64}
 
 const DF_SCHEMA = "/schema.cfg"
 const DF_DATA_DIR = "/data"
@@ -261,21 +270,21 @@ func (sdf *SDataFrame) AllocateColPartitionBuffer(col Sdscolumndef, pKey string)
 	colBuffer.Path = sdf.PartitionPath(pKey)
 	nrows := sdf.Schema.Keyspace.Rows
 	switch SDF_ColType_Keywords[col.Coltype] {
-	case 1:
+	case SDFK_Integer:
 		fallthrough
-	case 6:
+	case SDFK_Factor:
 		colBuffer.DataBufferInt32 = make([]int32, nrows)
-	case 2:
+	case SDFK_Float:
 		colBuffer.DataBufferFloat = make([]float32, nrows)
-	case 3:
+	case SDFK_Double:
 		colBuffer.DataBufferDouble = make([]float64, nrows)
-	case 4:
+	case SDFK_Date:
 		fallthrough
-	case 8:
+	case SDFK_Integer64:
 		colBuffer.DataBufferInt64 = make([]int64, nrows)
-	case 5:
+	case SDFK_Character:
 		colBuffer.DataBufferByte = make([]byte, nrows)
-	case 7:
+	case SDFK_Boolean:
 		colBuffer.DataBufferBool = make([]bool, nrows)
 	default:
 		panic("Unknown column type")
@@ -285,6 +294,7 @@ func (sdf *SDataFrame) AllocateColPartitionBuffer(col Sdscolumndef, pKey string)
 
 // Allocate all column partition buffers
 func (sdf *SDataFrame) AllocateAllColsPartitionBuffer(pKey string) (buffers SDataFramePartitionCols) {
+	buffers.colBuffers = make([]SDataFrameColBuffer, len(sdf.Schema.Columns))
 
 	for index, element := range sdf.Schema.Columns {
 		buffers.colBuffers[index] = sdf.AllocateColPartitionBuffer(element, pKey)
@@ -301,4 +311,7 @@ func (sdf *SDataFrame) CreatePartition(pkey string) (buffers SDataFramePartition
 	buffers = sdf.AllocateAllColsPartitionBuffer(pkey)
 	return buffers, nil
 
+}
+
+func (pCols *SDataFramePartitionCols) setRow(row int, record []string) {
 }

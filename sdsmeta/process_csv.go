@@ -83,19 +83,20 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 	pkey := "-nil-"
 	row := 0
 	for {
-		var row []string
+		var record []string
+		var buffers SDataFramePartitionCols
+
 		record, err = csvReader.Read()
 		if err != nil {
 			return err
 		}
 
 		// Extract partition key and create partition if needed
-		npkey := createPartitionLabel(df, row)
+		npkey := createPartitionLabel(df, record)
 		//fmt.Printf("pkey=%s\n", npkey)
 		if npkey != pkey {
 			pkey = npkey
 			row = 0
-			var buffers SDataFramePartitionCols
 			buffers, err = df.CreatePartition(pkey)
 		}
 

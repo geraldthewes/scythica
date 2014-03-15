@@ -77,7 +77,7 @@ func TestRead(t *testing.T) {
 
 func TestColTypes(t *testing.T) {
 	var bcfg = Sdsmeta{
-		Columns: []Sdscolumndef{{"year", "int32", PKEY},
+		Columns: []Sdscolumndef{{"year", "integer", PKEY},
 			{"month", "integer", PKEY},
 			{"day", "bogus", PKEY},
 			{"value", "character", ""}},
