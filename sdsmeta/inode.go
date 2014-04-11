@@ -8,10 +8,11 @@ import (
 )
 
 type Sdskeyspace struct {
-	Key_size     int32
-	Nodes        int32
-	Rows         int32
-	PartitionFmt string "partionfmt,omitempty"
+	Key_size int32
+	Nodes    int32
+	Rows     int32
+	IsNA     string "isna,omitempty"
+	//PartitionFmt string "partionfmt,omitempty"
 }
 
 type Sdscolumndef struct {
@@ -34,24 +35,6 @@ type SDataFrame struct {
 	typeIndex      []int // index in type
 }
 
-// Single Buffer for a Partition of a Column
-type SDataFrameColBuffer struct {
-	Column           Sdscolumndef
-	Path             string
-	PartitionKey     string
-	DataBufferInt32  []int32
-	DataBufferFloat  []float32
-	DataBufferDouble []float64
-	DataBufferInt64  []int64
-	DataBufferByte   []byte
-	DataBufferFactor []int32
-	DataBufferBool   []bool
-}
-
-type SDataFramePartitionCols struct {
-	colBuffers []SDataFrameColBuffer
-}
-
 type SError struct {
 	msg string
 }
@@ -61,7 +44,7 @@ const max_cfg = 8192
 const PKEY = "pkey"
 const PKEY_0PAD2 = "pkey0p2"
 
-const SDF_Integer = "integer"
+const SDF_Integer32 = "int32"
 const SDF_Float = "float"
 const SDF_Double = "double"
 const SDF_Date = "date"
@@ -70,7 +53,7 @@ const SDF_Factor = "factor"
 const SDF_Boolean = "boolean"
 const SDF_Integer64 = "int64"
 
-const SDFK_Integer = 1
+const SDFK_Integer32 = 1
 const SDFK_Float = 2
 const SDFK_Double = 3
 const SDFK_Date = 4
@@ -80,7 +63,7 @@ const SDFK_Boolean = 7
 const SDFK_Integer64 = 8
 
 var SDF_ColType_Keywords = map[string]int{
-	SDF_Integer:   SDFK_Integer,
+	SDF_Integer32: SDFK_Integer32,
 	SDF_Float:     SDFK_Float,
 	SDF_Double:    SDFK_Double,
 	SDF_Date:      SDFK_Date,
@@ -92,6 +75,7 @@ var SDF_ColType_Keywords = map[string]int{
 const DF_SCHEMA = "/schema.cfg"
 const DF_DATA_DIR = "/data"
 const DF_SEP = "/"
+const DF_FS = "-"
 
 func (e *SError) Error() string {
 	return e.msg
@@ -266,29 +250,12 @@ func (sdf *SDataFrame) PartitionPath(pKey string) (path string) {
 
 // Allocate a column partition buffer
 func (sdf *SDataFrame) AllocateColPartitionBuffer(col Sdscolumndef, pKey string) (colBuffer SDataFrameColBuffer) {
+	colBuffer.Column = col
 	colBuffer.PartitionKey = pKey
 	colBuffer.Path = sdf.PartitionPath(pKey)
+	colBuffer.IsNA = sdf.Schema.Keyspace.IsNA
 	nrows := sdf.Schema.Keyspace.Rows
-	switch SDF_ColType_Keywords[col.Coltype] {
-	case SDFK_Integer:
-		fallthrough
-	case SDFK_Factor:
-		colBuffer.DataBufferInt32 = make([]int32, nrows)
-	case SDFK_Float:
-		colBuffer.DataBufferFloat = make([]float32, nrows)
-	case SDFK_Double:
-		colBuffer.DataBufferDouble = make([]float64, nrows)
-	case SDFK_Date:
-		fallthrough
-	case SDFK_Integer64:
-		colBuffer.DataBufferInt64 = make([]int64, nrows)
-	case SDFK_Character:
-		colBuffer.DataBufferByte = make([]byte, nrows)
-	case SDFK_Boolean:
-		colBuffer.DataBufferBool = make([]bool, nrows)
-	default:
-		panic("Unknown column type")
-	}
+	colBuffer.allocateBuffer(nrows)
 	return
 }
 
@@ -309,9 +276,7 @@ func (sdf *SDataFrame) CreatePartition(pkey string) (buffers SDataFramePartition
 		return buffers, err
 	}
 	buffers = sdf.AllocateAllColsPartitionBuffer(pkey)
+	buffers.Rows = 0
 	return buffers, nil
 
-}
-
-func (pCols *SDataFramePartitionCols) setRow(row int, record []string) {
 }

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var cfg = Sdsmeta{
+var cfgsample = Sdsmeta{
 	Columns: []Sdscolumndef{{"dt", "Date", PKEY}, {"value", "character", ""}},
 	Keyspace: Sdskeyspace{
 		Key_size: 8192,
@@ -15,7 +15,7 @@ var cfg = Sdsmeta{
 		Rows:     1000}}
 
 func TestOutput(t *testing.T) {
-	output, err := OutputYAMLConfiguration(&cfg)
+	output, err := OutputYAMLConfiguration(&cfgsample)
 	if err != nil {
 		panic(err)
 	}
@@ -78,13 +78,14 @@ func TestRead(t *testing.T) {
 func TestColTypes(t *testing.T) {
 	var bcfg = Sdsmeta{
 		Columns: []Sdscolumndef{{"year", "int32", PKEY},
-			{"month", "integer", PKEY},
+			{"month", "int32", PKEY},
 			{"day", "bogus", PKEY},
 			{"value", "character", ""}},
 		Keyspace: Sdskeyspace{
 			Key_size: 8192,
 			Nodes:    2,
-			Rows:     1000}}
+			Rows:     1000},
+		NCols: 4}
 
 	Desc(t, "Column Types", func(it It) {
 

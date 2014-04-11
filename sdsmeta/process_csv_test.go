@@ -10,6 +10,13 @@ const DATA_CFG = "../sdscreate/data/airline.yaml"
 const DATA_DATA = "../sdscreate/data/airline.csv"
 const DATADS = "airline"
 
+type progresstty struct {
+}
+
+func (p progresstty) Progress(pkey string, rows int) {
+	fmt.Printf("Created partition %s rows: %d\n", pkey, rows)
+}
+
 func TestCreate(t *testing.T) {
 	fmt.Printf("TestCreate  CSV\n")
 
@@ -21,7 +28,9 @@ func TestCreate(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = CreateFromCsv(cfg, DATADS, DATA_DATA)
+
+	p := progresstty{}
+	err = CreateFromCsv(cfg, DATADS, DATA_DATA, p)
 	if err != nil {
 		panic(err)
 	}

@@ -3,7 +3,8 @@ package sdsmeta
 import (
 	"bytes"
 	"encoding/csv"
-	//"fmt"
+	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -19,8 +20,8 @@ func CreateFromCsv(schema Sdsmeta, location string, csvFile string) (err error) 
 		return err
 	}
 
-	LoadCsv(&df, csvFile)
-	return nil
+	err = LoadCsv(&df, csvFile)
+	return err
 
 }
 
@@ -61,6 +62,7 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 
 	var csvFile *os.File
 
+	err = nil
 	csvFile, err = os.Open(csvFileName)
 	if err != nil {
 		return err
@@ -77,17 +79,19 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 	}
 	matchHeader()
 	df.createPartitionIndex()
-	//dataDir := df.Location + DF_DATA_DIR + "/"
 
 	// Read data
 	pkey := "-nil-"
-	row := 0
+	var buffers SDataFramePartitionCols
+	buffers.Rows = 0
+
 	for {
 		var record []string
-		var buffers SDataFramePartitionCols
 
 		record, err = csvReader.Read()
-		if err != nil {
+		if err == io.EOF {
+			break
+		} else if err != nil {
 			return err
 		}
 
@@ -95,16 +99,26 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 		npkey := createPartitionLabel(df, record)
 		//fmt.Printf("pkey=%s\n", npkey)
 		if npkey != pkey {
+			err = buffers.FlushToDisk()
+			if err != nil {
+				return err
+			}
+
 			pkey = npkey
-			row = 0
 			buffers, err = df.CreatePartition(pkey)
 		}
 
-		buffers.setRow(row, record)
-		row++
+		err = buffers.setRow(buffers.Rows, record)
+		if err != nil {
+			return err
+		}
+
+		buffers.Rows++
 
 	}
+	fmt.Printf("Flush\n")
+	err = buffers.FlushToDisk()
 
-	return nil
+	return err
 
 }
