@@ -2,6 +2,7 @@ package sdsmeta
 
 import (
 	"fmt"
+	. "github.com/pranavraja/zen"
 	"os"
 	"testing"
 )
@@ -18,21 +19,26 @@ func (p progresstty) Progress(pkey string, rows int) {
 }
 
 func TestCreate(t *testing.T) {
-	fmt.Printf("TestCreate  CSV\n")
+	Desc(t, "TestCreate  CSV\n", func(it It) {
 
-	// Delete existing directory if necessary
-	_ = os.RemoveAll(DATADS)
+		// Delete existing directory if necessary
+		_ = os.RemoveAll(DATADS)
 
-	// read configuration
-	cfg, err := ReadYAMLConfigurationFromFile(DATA_CFG)
-	if err != nil {
-		panic(err)
-	}
+		// read configuration
+		cfg, err := ReadYAMLConfigurationFromFile(DATA_CFG)
+		if err != nil {
+			panic(err)
+		}
 
-	p := progresstty{}
-	err = CreateFromCsv(cfg, DATADS, DATA_DATA, p)
-	if err != nil {
-		panic(err)
-	}
+		p := progresstty{}
+		err = CreateFromCsv(cfg, DATADS, DATA_DATA, p)
+		if err != nil {
+			panic(err)
+		}
+
+		it("check ncols", func(expect Expect) {
+			expect(cfg.NCols).ToEqual(29)
+		})
+	})
 
 }

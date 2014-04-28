@@ -25,6 +25,7 @@ type Sdscolumndef struct {
 type Sdsmeta struct {
 	Columns  []Sdscolumndef
 	Keyspace Sdskeyspace
+	NCols    int "ncols,omitempty"
 }
 
 // Hold Runtime Information
@@ -76,6 +77,8 @@ const DF_SCHEMA = "/schema.cfg"
 const DF_DATA_DIR = "/data"
 const DF_SEP = "/"
 const DF_FS = "-"
+const DF_PDB = "pdb.key"
+const DB_NROW = "nrow"
 
 func (e *SError) Error() string {
 	return e.msg
@@ -89,6 +92,7 @@ func ReadYAMLConfiguration(cfgstring string) (cfg Sdsmeta, err error) {
 		//log.Fatal(err)
 		panic(err)
 	}
+	cfg.NCols = len(cfg.Columns)
 	return cfg, err
 }
 
@@ -127,6 +131,7 @@ func ReadYAMLConfigurationFromFile(cfgFile string) (cfg Sdsmeta, err error) {
 		//log.Fatal(err)
 		panic(err)
 	}
+	cfg.NCols = len(cfg.Columns)
 	return cfg, err
 }
 
@@ -262,6 +267,7 @@ func (sdf *SDataFrame) AllocateColPartitionBuffer(col Sdscolumndef, pKey string)
 // Allocate all column partition buffers
 func (sdf *SDataFrame) AllocateAllColsPartitionBuffer(pKey string) (buffers SDataFramePartitionCols) {
 	buffers.colBuffers = make([]SDataFrameColBuffer, len(sdf.Schema.Columns))
+	buffers.path = sdf.PartitionPath(pKey)
 
 	for index, element := range sdf.Schema.Columns {
 		buffers.colBuffers[index] = sdf.AllocateColPartitionBuffer(element, pKey)

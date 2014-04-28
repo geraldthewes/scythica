@@ -68,10 +68,17 @@ keyspace:
 }
 
 func TestRead(t *testing.T) {
-	_, err := ReadYAMLConfigurationFromFile("test-out.yaml")
-	if err != nil {
-		panic(err)
-	}
+	Desc(t, "Test Reading Configuration from file", func(it It) {
+		cfg, err := ReadYAMLConfigurationFromFile("test-out.yaml")
+		if err != nil {
+			panic(err)
+		}
+
+		it("Check ncols", func(expect Expect) {
+			expect(cfg.NCols).ToEqual(2)
+		})
+
+	})
 
 }
 
@@ -90,7 +97,7 @@ func TestColTypes(t *testing.T) {
 	Desc(t, "Column Types", func(it It) {
 
 		it("check valid", func(expect Expect) {
-			pos := cfg.verifyColumnTypes()
+			pos := cfgsample.verifyColumnTypes()
 			expect(pos).ToEqual(0)
 		})
 
@@ -106,7 +113,7 @@ func TestDFMeta(t *testing.T) {
 	Desc(t, "data freame meta functions", func(it It) {
 
 		sdf := SDataFrame{
-			Schema:         cfg,
+			Schema:         cfgsample,
 			Location:       "",
 			partitionIndex: nil}
 
@@ -122,7 +129,7 @@ func TestPartitions(t *testing.T) {
 	Desc(t, "partitions simple", func(it It) {
 
 		sdf := SDataFrame{
-			Schema:         cfg,
+			Schema:         cfgsample,
 			Location:       "",
 			partitionIndex: nil}
 

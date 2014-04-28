@@ -3,14 +3,18 @@ package sdsmeta
 import (
 	"bytes"
 	"encoding/csv"
-	"fmt"
+	//"fmt"
 	"io"
 	"os"
 	"strings"
 )
 
+type ImportProgresser interface {
+	Progress(pKey string, rows int)
+}
+
 // Created SDS Dataframe from CSV file
-func CreateFromCsv(schema Sdsmeta, location string, csvFile string) (err error) {
+func CreateFromCsv(schema Sdsmeta, location string, csvFile string, progress ImportProgresser) (err error) {
 	var df SDataFrame
 	df.Schema = schema
 	df.Location = location
@@ -20,7 +24,7 @@ func CreateFromCsv(schema Sdsmeta, location string, csvFile string) (err error) 
 		return err
 	}
 
-	err = LoadCsv(&df, csvFile)
+	err = LoadCsv(&df, csvFile, progress)
 	return err
 
 }
@@ -53,7 +57,7 @@ func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 }
 
 // Load CSV file in df Data Frame
-func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
+func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err error) {
 	// Assume partitions are contiguous
 	// Iterate over every row
 	// If partition changes - start new partition
@@ -103,6 +107,7 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 			if err != nil {
 				return err
 			}
+			progress.Progress(pkey, buffers.Rows)
 
 			pkey = npkey
 			buffers, err = df.CreatePartition(pkey)
@@ -116,8 +121,9 @@ func LoadCsv(df *SDataFrame, csvFileName string) (err error) {
 		buffers.Rows++
 
 	}
-	fmt.Printf("Flush\n")
+	//fmt.Printf("Flush\n")
 	err = buffers.FlushToDisk()
+	progress.Progress(pkey, buffers.Rows)
 
 	return err
 

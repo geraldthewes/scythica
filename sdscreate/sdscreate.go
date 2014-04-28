@@ -13,6 +13,15 @@ func usage() {
 	os.Exit(2)
 }
 
+type importprogress struct {
+}
+
+func (p importprogress) Progress(pkey string, rows int) {
+	if rows > 0 {
+		fmt.Printf("Created partition %s rows: %d\n", pkey, rows)
+	}
+}
+
 func main() {
 	flag.Usage = usage
 	flag.Parse()
@@ -30,7 +39,8 @@ func main() {
 		panic(err)
 	}
 
-	err = sdsmeta.CreateFromCsv(schema, location, csvFile)
+	p := importprogress{}
+	err = sdsmeta.CreateFromCsv(schema, location, csvFile, p)
 	if err != nil {
 		panic(err)
 	}

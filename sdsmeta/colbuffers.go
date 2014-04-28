@@ -1,6 +1,8 @@
 package sdsmeta
 
 import (
+	//"code.google.com/p/leveldb-go/leveldb"
+	//"code.google.com/p/leveldb-go/leveldb/db"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -11,6 +13,7 @@ import (
 // List of column buffers
 type SDataFramePartitionCols struct {
 	Rows       int
+	path       string
 	colBuffers []SDataFrameColBuffer
 }
 
@@ -54,9 +57,38 @@ func (pCols *SDataFramePartitionCols) FlushToDisk() (err error) {
 		}
 	}
 
-	// Now store rows
+	return pCols.createPartitionDB()
+}
 
-	return
+func (pCols *SDataFramePartitionCols) createPartitionDB() (err error) {
+	err = nil
+
+	var dbh partitionStorer
+
+	//dbh, err = openLevelDBStore(pCols.path)
+	dbh, err = openMsgPackStore(pCols.path)
+
+	//fname := pCols.path + DF_SEP + DF_PDB
+
+	//var dbh *leveldb.DB
+	//dbh, err = leveldb.Open(fname, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err = dbh.close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	//nrows := make([]byte, 8)
+	//binary.PutVarint(nrows, int64(pCols.Rows))
+	dbh.put(DB_NROW, int64(pCols.Rows))
+	//opts := db.WriteOptions{Sync: true}
+	//err = dbh.Set([]byte(DB_NROW), nrows, &opts)
+
+	return err
 }
 
 func (pCols *SDataFramePartitionCols) String() (s string) {

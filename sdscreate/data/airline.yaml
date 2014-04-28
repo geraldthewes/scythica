@@ -26,6 +26,8 @@ columns:
   coltype: factor
 - colname: ActualElapsedTime
   coltype: int32
+- colname: CRSElapsedTime
+  coltype: int32
 - colname: AirTime
   coltype: int32
 - colname: ArrDelay
@@ -49,17 +51,17 @@ columns:
 - colname: Diverted
   coltype: boolean
 - colname: CarrierDelay
-  coltype: int32
+  coltype: character
 - colname: WeatherDelay
-  coltype: int32
+  coltype: character
 - colname: NASDelay
-  coltype: int32
+  coltype: character
 - colname: SecurityDelay
-  coltype: int32
+  coltype: character
 - colname: LateAircraftDelay
-  coltype: int32
+  coltype: character
 keyspace:
   key_size: 8192
   nodes: 1
   rows: 500000
-  partitionby: "Year,Month,DayofMonth"
+  isna: "NA"
