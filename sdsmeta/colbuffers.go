@@ -10,6 +10,8 @@ import (
 	"strconv"
 )
 
+const HEADER_PAD_BYTES = 128 // Used for R SEXPREC_ALIGN pad
+
 // List of column buffers
 type SDataFramePartitionCols struct {
 	Rows       int
@@ -197,6 +199,20 @@ func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int) (err error) {
 	}()
 	var out io.Writer
 	out = io.Writer(fo)
+
+	// Write out header for R
+	var hdrpad [HEADER_PAD_BYTES]byte
+	var n int
+	n, err = out.Write(hdrpad[:])
+	if n != HEADER_PAD_BYTES {
+		var serr SError
+		serr.msg = "Error while writing out Pad bytes"
+		err = &serr
+		return err
+	}
+	if err != nil {
+		return err
+	}
 
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Integer32:
