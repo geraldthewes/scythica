@@ -28,7 +28,7 @@ type Sdsmeta struct {
 	NCols    int "ncols,omitempty"
 }
 
-// Hold Runtime Information
+// Main dataframe class, with access both to meta data and dataframe data
 type SDataFrame struct {
 	Schema         Sdsmeta
 	Location       string
@@ -254,6 +254,7 @@ func (sdf *SDataFrame) PartitionPath(pKey string) (path string) {
 }
 
 // Allocate a column partition buffer
+/*
 func (sdf *SDataFrame) AllocateColPartitionBuffer(col Sdscolumndef, pKey string) (colBuffer SDataFrameColBuffer) {
 	colBuffer.Column = col
 	colBuffer.PartitionKey = pKey
@@ -263,8 +264,10 @@ func (sdf *SDataFrame) AllocateColPartitionBuffer(col Sdscolumndef, pKey string)
 	colBuffer.allocateBuffer(nrows)
 	return
 }
+*/
 
 // Allocate all column partition buffers
+/*
 func (sdf *SDataFrame) AllocateAllColsPartitionBuffer(pKey string) (buffers SDataFramePartitionCols) {
 	buffers.colBuffers = make([]SDataFrameColBuffer, len(sdf.Schema.Columns))
 	buffers.path = sdf.PartitionPath(pKey)
@@ -274,15 +277,19 @@ func (sdf *SDataFrame) AllocateAllColsPartitionBuffer(pKey string) (buffers SDat
 	}
 	return
 }
+*/
 
-// Create Partition
+// Create a new Partition
 func (sdf *SDataFrame) CreatePartition(pkey string) (buffers SDataFramePartitionCols, err error) {
-	err = os.Mkdir(sdf.PartitionPath(pkey), 0774)
-	if err != nil {
-		return buffers, err
-	}
-	buffers = sdf.AllocateAllColsPartitionBuffer(pkey)
-	buffers.Rows = 0
-	return buffers, nil
-
+	buffers, err = CreatePartition(sdf, pkey)
+	return
+	/*
+		err = os.Mkdir(sdf.PartitionPath(pkey), 0774)
+		if err != nil {
+			return buffers, err
+		}
+		buffers = sdf.AllocateAllColsPartitionBuffer(pkey)
+		buffers.Rows = 0
+		return buffers, nil
+	*/
 }

@@ -12,13 +12,6 @@ import (
 
 const HEADER_PAD_BYTES = 128 // Used for R SEXPREC_ALIGN pad
 
-// List of column buffers
-type SDataFramePartitionCols struct {
-	Rows       int
-	path       string
-	colBuffers []SDataFrameColBuffer
-}
-
 // Single Buffer for a Partition of a Column
 type SDataFrameColBuffer struct {
 	Column           Sdscolumndef
@@ -34,67 +27,14 @@ type SDataFrameColBuffer struct {
 	DataBufferBool   []bool
 }
 
-func (pCols *SDataFramePartitionCols) setRow(row int, record []string) (err error) {
-	//fmt.Printf("Set row ... %d\n", row)
-	for i := 0; i < len(pCols.colBuffers); i++ {
-		err = pCols.colBuffers[i].setCol(row, record[i])
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (pCols *SDataFramePartitionCols) FlushToDisk() (err error) {
-	err = nil
-
-	if pCols.Rows == 0 {
-		return
-	}
-
-	for _, colBuffer := range pCols.colBuffers {
-		err = colBuffer.FlushToDisk(pCols.Rows)
-		if err != nil {
-			return err
-		}
-	}
-
-	return pCols.createPartitionDB()
-}
-
-func (pCols *SDataFramePartitionCols) createPartitionDB() (err error) {
-	err = nil
-
-	var dbh partitionStorer
-
-	//dbh, err = openLevelDBStore(pCols.path)
-	dbh, err = openMsgPackStore(pCols.path)
-
-	//fname := pCols.path + DF_SEP + DF_PDB
-
-	//var dbh *leveldb.DB
-	//dbh, err = leveldb.Open(fname, nil)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err = dbh.close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	//nrows := make([]byte, 8)
-	//binary.PutVarint(nrows, int64(pCols.Rows))
-	dbh.put(DB_NROW, int64(pCols.Rows))
-	//opts := db.WriteOptions{Sync: true}
-	//err = dbh.Set([]byte(DB_NROW), nrows, &opts)
-
-	return err
-}
-
-func (pCols *SDataFramePartitionCols) String() (s string) {
-	s = fmt.Sprintf("List of columns of length %d", len(pCols.colBuffers))
+// Create new Column Partition Buffer
+func NewColPartitionBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer SDataFrameColBuffer) {
+	colBuffer.Column = col
+	colBuffer.PartitionKey = pKey
+	colBuffer.Path = sdf.PartitionPath(pKey)
+	colBuffer.IsNA = sdf.Schema.Keyspace.IsNA
+	nrows := sdf.Schema.Keyspace.Rows
+	colBuffer.allocateBuffer(nrows)
 	return
 }
 

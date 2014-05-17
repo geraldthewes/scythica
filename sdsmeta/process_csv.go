@@ -34,7 +34,7 @@ func matchHeader() (match bool) {
 	return true
 }
 
-// Create Partition label
+// Create partition label from all the key columns
 func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 	// Count number of columns in the partition
 	var buffer bytes.Buffer
@@ -56,7 +56,8 @@ func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 	return buffer.String()
 }
 
-// Load CSV file in df Data Frame
+// Import CSV file in df Data Frame. Pass in an ImportProgresser to report on progress
+// the progress of the import job
 func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err error) {
 	// Assume partitions are contiguous
 	// Iterate over every row
