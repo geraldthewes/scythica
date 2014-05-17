@@ -20,7 +20,7 @@ type SDataFramePartitionCols struct {
 }
 
 // Create a new Partition
-func CreatePartition(sdf *SDataFrame, pkey string) (buffers SDataFramePartitionCols, err error) {
+func CreatePartitionCols(sdf *SDataFrame, pkey string) (buffers SDataFramePartitionCols, err error) {
 	buffers.Sdf = sdf
 	buffers.Rows = 0
 	buffers.Chunk = 0
@@ -32,25 +32,12 @@ func CreatePartition(sdf *SDataFrame, pkey string) (buffers SDataFramePartitionC
 	buffers.colBuffers = make([]SDataFrameColBuffer, len(sdf.Schema.Columns))
 
 	for index, element := range sdf.Schema.Columns {
-		buffers.colBuffers[index] = NewColPartitionBuffer(sdf, element, pkey)
+		buffers.colBuffers[index] = NewColBuffer(sdf, element, pkey)
 	}
 
 	return buffers, nil
 
 }
-
-// Allocate all column partition buffers
-/*
-func (sdf *SDataFrame) AllocateAllColsPartitionBuffer(pKey string) (buffers SDataFramePartitionCols) {
-	buffers.colBuffers = make([]SDataFrameColBuffer, len(sdf.Schema.Columns))
-	buffers.path = sdf.PartitionPath(pKey)
-
-	for index, element := range sdf.Schema.Columns {
-		buffers.colBuffers[index] = sdf.AllocateColPartitionBuffer(element, pKey)
-	}
-	return
-}
-*/
 
 func (pCols *SDataFramePartitionCols) setRow(row int, record []string) (err error) {
 	//fmt.Printf("Set row ... %d\n", row)

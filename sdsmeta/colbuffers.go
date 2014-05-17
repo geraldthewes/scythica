@@ -28,7 +28,7 @@ type SDataFrameColBuffer struct {
 }
 
 // Create new Column Partition Buffer
-func NewColPartitionBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer SDataFrameColBuffer) {
+func NewColBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer SDataFrameColBuffer) {
 	colBuffer.Column = col
 	colBuffer.PartitionKey = pKey
 	colBuffer.Path = sdf.PartitionPath(pKey)

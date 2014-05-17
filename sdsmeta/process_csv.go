@@ -15,11 +15,9 @@ type ImportProgresser interface {
 
 // Created SDS Dataframe from CSV file
 func CreateFromCsv(schema Sdsmeta, location string, csvFile string, progress ImportProgresser) (err error) {
-	var df SDataFrame
-	df.Schema = schema
-	df.Location = location
+	var df = NewSDataFrame(schema, location)
 
-	err = CreateSDataSet(&df.Schema, location)
+	err = df.CreateSDataFrameOnDisk()
 	if err != nil {
 		return err
 	}
