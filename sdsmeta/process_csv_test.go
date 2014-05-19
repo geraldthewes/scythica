@@ -14,7 +14,7 @@ const DATADS = "airline"
 type progresstty struct {
 }
 
-func (p progresstty) Progress(pkey string, rows int) {
+func (p progresstty) Progress(pkey string, rows int32) {
 	fmt.Printf("Created partition %s rows: %d\n", pkey, rows)
 }
 

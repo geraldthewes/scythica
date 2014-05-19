@@ -10,7 +10,7 @@ import (
 )
 
 type ImportProgresser interface {
-	Progress(pKey string, rows int)
+	Progress(pKey string, rows int32)
 }
 
 // Created SDS Dataframe from CSV file
@@ -85,8 +85,9 @@ func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err
 
 	// Read data
 	pkey := "-nil-"
-	var buffers SDataFramePartitionCols
-	buffers.Rows = 0
+
+	// Will re-use same SDataFramePartionCols for each partition
+	buffers := NewPartitionCols(df)
 
 	for {
 		var record []string
@@ -112,12 +113,10 @@ func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err
 			buffers, err = df.CreatePartition(pkey)
 		}
 
-		err = buffers.setRow(buffers.Rows, record)
+		err = buffers.AppendRow(buffers.Rows, record)
 		if err != nil {
 			return err
 		}
-
-		buffers.Rows++
 
 	}
 	//fmt.Printf("Flush\n")

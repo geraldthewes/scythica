@@ -18,6 +18,7 @@ type SDataFrameColBuffer struct {
 	Path             string
 	PartitionKey     string
 	IsNA             string
+	rowsPerChunk     int32
 	DataBufferInt32  []int32
 	DataBufferFloat  []float32
 	DataBufferDouble []float64
@@ -33,11 +34,13 @@ func NewColBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer SDa
 	colBuffer.PartitionKey = pKey
 	colBuffer.Path = sdf.PartitionPath(pKey)
 	colBuffer.IsNA = sdf.Schema.Keyspace.IsNA
-	nrows := sdf.Schema.Keyspace.Rows
+	nrows := sdf.Schema.Keyspace.Rows_per_chunk
+	colBuffer.rowsPerChunk = nrows
 	colBuffer.allocateBuffer(nrows)
 	return
 }
 
+// String representation of column buffer
 func (pCols *SDataFrameColBuffer) String() (s string) {
 	s = fmt.Sprintf("Column: %s (%s) Attributes: %s. Partition %s:%s",
 		pCols.Column.Colname,
@@ -73,7 +76,8 @@ func (colBuffer *SDataFrameColBuffer) allocateBuffer(nrows int32) {
 	return
 }
 
-func (col *SDataFrameColBuffer) setCol(row int, value string) (err error) {
+// Set Value in buffer. row is offset in chunk
+func (col *SDataFrameColBuffer) setCol(row int32, value string) (err error) {
 
 	err = nil
 
@@ -122,13 +126,15 @@ func (col *SDataFrameColBuffer) setCol(row int, value string) (err error) {
 	return
 }
 
-func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int) (err error) {
+// Flush current column to disk. Pass in number of rows to write and chunk count
+func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int32, chunk int32) (err error) {
 	err = nil
 
 	var fo *os.File
-	fname := colBuffer.Path + DF_SEP + colBuffer.Column.Colname
+	fname := fmt.Sprintf("%s-%08x", colBuffer.Column.Colname, chunk)
+	fpath := colBuffer.Path + DF_SEP + fname
 	//fmt.Printf("write ... %s\n", fname)
-	fo, err = os.Create(fname)
+	fo, err = os.Create(fpath)
 	if err != nil {
 		return err
 	}
@@ -154,9 +160,11 @@ func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int) (err error) {
 		return err
 	}
 
+	nrows := rows % colBuffer.rowsPerChunk
+
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Integer32:
-		buff := colBuffer.DataBufferInt32[0:rows]
+		buff := colBuffer.DataBufferInt32[0:nrows]
 		binary.Write(out, binary.LittleEndian, buff)
 	case SDFK_Factor:
 		//

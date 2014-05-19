@@ -13,17 +13,28 @@ import (
 // List of column buffers
 type SDataFramePartitionCols struct {
 	Sdf        *SDataFrame           // Pointer to Dataframe
-	Rows       int                   // Current count of rows
-	Chunk      int                   // Current chunk count
+	Rows       int32                 // Current count of rows
+	Chunks     int32                 // Current chunk count
+	Pkey       string                // Partition key
 	path       string                // Partition path
 	colBuffers []SDataFrameColBuffer // List of column buffers
+}
+
+// Inititalize new PartitionCols
+func NewPartitionCols(sdf *SDataFrame) (buffers SDataFramePartitionCols) {
+	buffers.Sdf = sdf
+	buffers.Rows = 0
+	buffers.Chunks = 0
+	buffers.Pkey = "-nil-"
+	return
 }
 
 // Create a new Partition
 func CreatePartitionCols(sdf *SDataFrame, pkey string) (buffers SDataFramePartitionCols, err error) {
 	buffers.Sdf = sdf
 	buffers.Rows = 0
-	buffers.Chunk = 0
+	buffers.Chunks = 0
+	buffers.Pkey = pkey
 	buffers.path = sdf.PartitionPath(pkey)
 	err = os.Mkdir(buffers.path, 0774)
 	if err != nil {
@@ -39,15 +50,24 @@ func CreatePartitionCols(sdf *SDataFrame, pkey string) (buffers SDataFramePartit
 
 }
 
-func (pCols *SDataFramePartitionCols) setRow(row int, record []string) (err error) {
+func (pCols *SDataFramePartitionCols) AppendRow(row int32, record []string) (err error) {
+	err = nil
+
 	//fmt.Printf("Set row ... %d\n", row)
 	for i := 0; i < len(pCols.colBuffers); i++ {
-		err = pCols.colBuffers[i].setCol(row, record[i])
+		nrow := row % pCols.Sdf.Schema.Keyspace.Rows_per_chunk
+		err = pCols.colBuffers[i].setCol(nrow, record[i])
 		if err != nil {
 			return err
 		}
 	}
-	return nil
+	nrows := pCols.Rows + 1
+	if nrows%pCols.Sdf.Schema.Keyspace.Rows_per_chunk == 0 {
+		err = pCols.FlushToDisk()
+		pCols.Chunks++
+	}
+	pCols.Rows = nrows
+	return
 }
 
 // Write current in memory content to disk
@@ -59,7 +79,7 @@ func (pCols *SDataFramePartitionCols) FlushToDisk() (err error) {
 	}
 
 	for _, colBuffer := range pCols.colBuffers {
-		err = colBuffer.FlushToDisk(pCols.Rows)
+		err = colBuffer.FlushToDisk(pCols.Rows, pCols.Chunks)
 		if err != nil {
 			return err
 		}
