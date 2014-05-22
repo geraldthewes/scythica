@@ -131,7 +131,7 @@ func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int32, chunk int32) (err 
 	err = nil
 
 	var fo *os.File
-	fname := fmt.Sprintf("%s-%08x", colBuffer.Column.Colname, chunk)
+	fname := fmt.Sprintf("%s-%08x.dat", colBuffer.Column.Colname, chunk)
 	fpath := colBuffer.Path + DF_SEP + fname
 	//fmt.Printf("write ... %s\n", fname)
 	fo, err = os.Create(fpath)
@@ -160,7 +160,8 @@ func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int32, chunk int32) (err 
 		return err
 	}
 
-	nrows := rows % colBuffer.rowsPerChunk
+	// +1 because we increment after the Append
+	nrows := rows%colBuffer.rowsPerChunk + 1
 
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Integer32:
