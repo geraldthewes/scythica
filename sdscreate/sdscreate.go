@@ -16,7 +16,7 @@ func usage() {
 type importprogress struct {
 }
 
-func (p importprogress) Progress(pkey string, rows int) {
+func (p importprogress) Progress(pkey string, rows int32) {
 	if rows > 0 {
 		fmt.Printf("Created partition %s rows: %d\n", pkey, rows)
 	}

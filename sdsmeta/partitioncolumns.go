@@ -31,11 +31,21 @@ func NewPartitionCols(sdf *SDataFrame) (buffers SDataFramePartitionCols) {
 
 // Create a new Partition
 func CreatePartitionCols(sdf *SDataFrame, pkey string) (buffers SDataFramePartitionCols, err error) {
+	err = nil
 	buffers.Sdf = sdf
 	buffers.Rows = 0
 	buffers.Chunks = 0
 	buffers.Pkey = pkey
 	buffers.path = sdf.PartitionPath(pkey)
+
+	_, err = os.Stat(buffers.path)
+	if err == nil {
+		var serr SError
+		serr.msg = fmt.Sprintf("error: partition %s already exists", pkey)
+		err = &serr
+		return
+	}
+
 	err = os.Mkdir(buffers.path, 0774)
 	if err != nil {
 		return buffers, err

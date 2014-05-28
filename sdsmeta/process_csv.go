@@ -55,7 +55,8 @@ func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 }
 
 // Import CSV file in df Data Frame. Pass in an ImportProgresser to report on progress
-// the progress of the import job
+// the progress of the import job.
+// Pass in '-' in csvFileName to read from stdin
 func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err error) {
 	// Assume partitions are contiguous
 	// Iterate over every row
@@ -66,9 +67,13 @@ func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err
 	var csvFile *os.File
 
 	err = nil
-	csvFile, err = os.Open(csvFileName)
-	if err != nil {
-		return err
+	if csvFileName == "-" {
+		csvFile = os.Stdin
+	} else {
+		csvFile, err = os.Open(csvFileName)
+		if err != nil {
+			return err
+		}
 	}
 	defer csvFile.Close()
 
@@ -111,6 +116,9 @@ func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err
 
 			pkey = npkey
 			buffers, err = df.CreatePartition(pkey)
+			if err != nil {
+				return err
+			}
 		}
 
 		err = buffers.AppendRow(buffers.Rows, record)

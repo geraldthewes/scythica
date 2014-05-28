@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-const DATA_CFG = "../sdscreate/data/airline.yaml"
-const DATA_DATA = "../sdscreate/data/airline.csv"
+const DATA_CFG = "../data/airline.yaml"
+const DATA_DATA = "../data/airline.csv"
 const DATADS = "airline"
 
 type progresstty struct {
