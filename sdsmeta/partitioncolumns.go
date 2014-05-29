@@ -10,12 +10,20 @@ import (
 	//"strconv"
 )
 
+type RowAppender interface {
+	FlushToDisk() (err error)
+	AppendRow(record []string) (err error)
+	Rows() (nrows int32)
+}
+
+var nullAppender nullRowAppender
+
 // List of column buffers
 type SDataFramePartitionCols struct {
 	Sdf        *SDataFrame           // Pointer to Dataframe
-	Rows       int32                 // Current count of rows
-	Chunks     int32                 // Current chunk count
-	Pkey       string                // Partition key
+	rows       int32                 // Current count of rows
+	chunks     int32                 // Current chunk count
+	pkey       string                // Partition key
 	path       string                // Partition path
 	colBuffers []SDataFrameColBuffer // List of column buffers
 }
@@ -23,60 +31,64 @@ type SDataFramePartitionCols struct {
 // Inititalize new PartitionCols
 func NewPartitionCols(sdf *SDataFrame) (buffers SDataFramePartitionCols) {
 	buffers.Sdf = sdf
-	buffers.Rows = 0
-	buffers.Chunks = 0
-	buffers.Pkey = "-nil-"
+	buffers.rows = 0
+	buffers.chunks = 0
+	buffers.pkey = "-nil-"
 	return
 }
 
 // Create a new Partition
-func CreatePartitionCols(sdf *SDataFrame, pkey string) (buffers SDataFramePartitionCols, err error) {
+func (pCols *SDataFramePartitionCols) CreatePartitionCols(sdf *SDataFrame, pkey string, noappend bool) (appender RowAppender, err error) {
 	err = nil
-	buffers.Sdf = sdf
-	buffers.Rows = 0
-	buffers.Chunks = 0
-	buffers.Pkey = pkey
-	buffers.path = sdf.PartitionPath(pkey)
-
-	_, err = os.Stat(buffers.path)
+	path := sdf.PartitionPath(pkey)
+	_, err = os.Stat(path)
 	if err == nil {
+		if noappend {
+			return RowAppender(&nullAppender), nil
+		}
 		var serr SError
 		serr.msg = fmt.Sprintf("error: partition %s already exists", pkey)
 		err = &serr
-		return
+		return RowAppender(&nullAppender), err
 	}
 
-	err = os.Mkdir(buffers.path, 0774)
+	pCols.Sdf = sdf
+	pCols.rows = 0
+	pCols.chunks = 0
+	pCols.pkey = pkey
+	pCols.path = path
+
+	err = os.Mkdir(path, 0774)
 	if err != nil {
-		return buffers, err
+		return RowAppender(&nullAppender), err
 	}
-	buffers.colBuffers = make([]SDataFrameColBuffer, len(sdf.Schema.Columns))
+	pCols.colBuffers = make([]SDataFrameColBuffer, len(sdf.Schema.Columns))
 
 	for index, element := range sdf.Schema.Columns {
-		buffers.colBuffers[index] = NewColBuffer(sdf, element, pkey)
+		pCols.colBuffers[index] = NewColBuffer(sdf, element, pkey)
 	}
 
-	return buffers, nil
+	return RowAppender(pCols), nil
 
 }
 
-func (pCols *SDataFramePartitionCols) AppendRow(row int32, record []string) (err error) {
+func (pCols *SDataFramePartitionCols) AppendRow(record []string) (err error) {
 	err = nil
 
 	//fmt.Printf("Set row ... %d\n", row)
 	for i := 0; i < len(pCols.colBuffers); i++ {
-		nrow := row % pCols.Sdf.Schema.Keyspace.Rows_per_chunk
+		nrow := pCols.rows % pCols.Sdf.Schema.Keyspace.Rows_per_chunk
 		err = pCols.colBuffers[i].setCol(nrow, record[i])
 		if err != nil {
 			return err
 		}
 	}
-	nrows := pCols.Rows + 1
+	nrows := pCols.rows + 1
 	if nrows%pCols.Sdf.Schema.Keyspace.Rows_per_chunk == 0 {
 		err = pCols.FlushToDisk()
-		pCols.Chunks++
+		pCols.chunks++
 	}
-	pCols.Rows = nrows
+	pCols.rows = nrows
 	return
 }
 
@@ -84,12 +96,12 @@ func (pCols *SDataFramePartitionCols) AppendRow(row int32, record []string) (err
 func (pCols *SDataFramePartitionCols) FlushToDisk() (err error) {
 	err = nil
 
-	if pCols.Rows == 0 {
+	if pCols.rows == 0 {
 		return
 	}
 
 	for _, colBuffer := range pCols.colBuffers {
-		err = colBuffer.FlushToDisk(pCols.Rows, pCols.Chunks)
+		err = colBuffer.FlushToDisk(pCols.rows, pCols.chunks)
 		if err != nil {
 			return err
 		}
@@ -122,11 +134,15 @@ func (pCols *SDataFramePartitionCols) createPartitionDB() (err error) {
 
 	//nrows := make([]byte, 8)
 	//binary.PutVarint(nrows, int64(pCols.Rows))
-	dbh.put(DB_NROW, int64(pCols.Rows))
+	dbh.put(DB_NROW, int64(pCols.rows))
 	//opts := db.WriteOptions{Sync: true}
 	//err = dbh.Set([]byte(DB_NROW), nrows, &opts)
 
 	return err
+}
+
+func (pCols *SDataFramePartitionCols) Rows() (nrows int32) {
+	return pCols.rows
 }
 
 func (pCols *SDataFramePartitionCols) String() (s string) {

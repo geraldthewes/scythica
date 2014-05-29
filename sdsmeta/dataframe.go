@@ -95,7 +95,7 @@ func (sdf *SDataFrame) PartitionPath(pKey string) (path string) {
 }
 
 // Create a new Partition
-func (sdf *SDataFrame) CreatePartition(pkey string) (buffers SDataFramePartitionCols, err error) {
-	buffers, err = CreatePartitionCols(sdf, pkey)
+func (sdf *SDataFrame) CreatePartition(buffers SDataFramePartitionCols, pkey string, noappend bool) (appender RowAppender, err error) {
+	appender, err = buffers.CreatePartitionCols(sdf, pkey, noappend)
 	return
 }

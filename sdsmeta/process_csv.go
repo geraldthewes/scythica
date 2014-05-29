@@ -14,7 +14,11 @@ type ImportProgresser interface {
 }
 
 // Created SDS Dataframe from CSV file
-func CreateFromCsv(schema Sdsmeta, location string, csvFile string, progress ImportProgresser) (err error) {
+func CreateFromCsv(schema Sdsmeta,
+	location string,
+	csvFile string,
+	progress ImportProgresser,
+	noappend bool) (err error) {
 	var df = NewSDataFrame(schema, location)
 
 	err = df.CreateSDataFrameOnDisk()
@@ -22,7 +26,7 @@ func CreateFromCsv(schema Sdsmeta, location string, csvFile string, progress Imp
 		return err
 	}
 
-	err = LoadCsv(&df, csvFile, progress)
+	err = LoadCsv(&df, csvFile, progress, noappend)
 	return err
 
 }
@@ -57,7 +61,10 @@ func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 // Import CSV file in df Data Frame. Pass in an ImportProgresser to report on progress
 // the progress of the import job.
 // Pass in '-' in csvFileName to read from stdin
-func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err error) {
+func LoadCsv(df *SDataFrame,
+	csvFileName string,
+	progress ImportProgresser,
+	noappend bool) (err error) {
 	// Assume partitions are contiguous
 	// Iterate over every row
 	// If partition changes - start new partition
@@ -91,8 +98,10 @@ func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err
 	// Read data
 	pkey := "-nil-"
 
+	var appender RowAppender
 	// Will re-use same SDataFramePartionCols for each partition
 	buffers := NewPartitionCols(df)
+	appender = RowAppender(&buffers)
 
 	for {
 		var record []string
@@ -108,28 +117,28 @@ func LoadCsv(df *SDataFrame, csvFileName string, progress ImportProgresser) (err
 		npkey := createPartitionLabel(df, record)
 		//fmt.Printf("pkey=%s\n", npkey)
 		if npkey != pkey {
-			err = buffers.FlushToDisk()
+			err = appender.FlushToDisk()
 			if err != nil {
 				return err
 			}
-			progress.Progress(pkey, buffers.Rows)
+			progress.Progress(pkey, appender.Rows())
 
 			pkey = npkey
-			buffers, err = df.CreatePartition(pkey)
+			appender, err = df.CreatePartition(buffers, pkey, noappend)
 			if err != nil {
 				return err
 			}
 		}
 
-		err = buffers.AppendRow(buffers.Rows, record)
+		err = appender.AppendRow(record)
 		if err != nil {
 			return err
 		}
 
 	}
 	//fmt.Printf("Flush\n")
-	err = buffers.FlushToDisk()
-	progress.Progress(pkey, buffers.Rows)
+	err = appender.FlushToDisk()
+	progress.Progress(pkey, appender.Rows())
 
 	return err
 

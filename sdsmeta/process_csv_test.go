@@ -31,7 +31,7 @@ func TestCreate(t *testing.T) {
 		}
 
 		p := progresstty{}
-		err = CreateFromCsv(cfg, DATADS, DATA_DATA, p)
+		err = CreateFromCsv(cfg, DATADS, DATA_DATA, p, false)
 		if err != nil {
 			panic(err)
 		}
