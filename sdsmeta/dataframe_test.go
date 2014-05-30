@@ -12,7 +12,7 @@ var cfgsample = Sdsmeta{
 	Keyspace: Sdskeyspace{
 		Key_size:       8192,
 		Nodes:          2,
-		Rows_per_chunk: 1000}}
+		Rows_per_split: 1000}}
 
 func TestOutput(t *testing.T) {
 	output, err := OutputYAMLConfiguration(&cfgsample)
@@ -34,7 +34,7 @@ func TestInput(t *testing.T) {
 keyspace:
   key_size: 8192
   nodes: 2
-  rows_per_chunk: 1000`
+  rows_per_split: 1000`
 
 	cfg, err := ReadYAMLConfiguration(yaml)
 	if err != nil {
@@ -91,7 +91,7 @@ func TestColTypes(t *testing.T) {
 		Keyspace: Sdskeyspace{
 			Key_size:       8192,
 			Nodes:          2,
-			Rows_per_chunk: 1000},
+			Rows_per_split: 1000},
 		NCols: 4}
 
 	Desc(t, "Column Types", func(it It) {
@@ -160,7 +160,7 @@ func TestPartitionsMulti(t *testing.T) {
 			Keyspace: Sdskeyspace{
 				Key_size:       8192,
 				Nodes:          2,
-				Rows_per_chunk: 1000}}
+				Rows_per_split: 1000}}
 
 		sdf := SDataFrame{
 			Schema:         mcfg,

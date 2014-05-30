@@ -63,5 +63,5 @@ columns:
 keyspace:
   key_size: 8192
   nodes: 1
-  rows_per_chunk: 500
+  rows_per_split: 500
   isna: "NA"

@@ -22,7 +22,7 @@ var nullAppender nullRowAppender
 type SDataFramePartitionCols struct {
 	Sdf        *SDataFrame           // Pointer to Dataframe
 	rows       int32                 // Current count of rows
-	chunks     int32                 // Current chunk count
+	splits     int32                 // Current split count
 	pkey       string                // Partition key
 	path       string                // Partition path
 	colBuffers []SDataFrameColBuffer // List of column buffers
@@ -32,7 +32,7 @@ type SDataFramePartitionCols struct {
 func NewPartitionCols(sdf *SDataFrame) (buffers SDataFramePartitionCols) {
 	buffers.Sdf = sdf
 	buffers.rows = 0
-	buffers.chunks = 0
+	buffers.splits = 0
 	buffers.pkey = "-nil-"
 	return
 }
@@ -54,7 +54,7 @@ func (pCols *SDataFramePartitionCols) CreatePartitionCols(sdf *SDataFrame, pkey 
 
 	pCols.Sdf = sdf
 	pCols.rows = 0
-	pCols.chunks = 0
+	pCols.splits = 0
 	pCols.pkey = pkey
 	pCols.path = path
 
@@ -77,16 +77,16 @@ func (pCols *SDataFramePartitionCols) AppendRow(record []string) (err error) {
 
 	//fmt.Printf("Set row ... %d\n", row)
 	for i := 0; i < len(pCols.colBuffers); i++ {
-		nrow := pCols.rows % pCols.Sdf.Schema.Keyspace.Rows_per_chunk
+		nrow := pCols.rows % pCols.Sdf.Schema.Keyspace.Rows_per_split
 		err = pCols.colBuffers[i].setCol(nrow, record[i])
 		if err != nil {
 			return err
 		}
 	}
 	nrows := pCols.rows + 1
-	if nrows%pCols.Sdf.Schema.Keyspace.Rows_per_chunk == 0 {
+	if nrows%pCols.Sdf.Schema.Keyspace.Rows_per_split == 0 {
 		err = pCols.FlushToDisk()
-		pCols.chunks++
+		pCols.splits++
 	}
 	pCols.rows = nrows
 	return
@@ -101,7 +101,7 @@ func (pCols *SDataFramePartitionCols) FlushToDisk() (err error) {
 	}
 
 	for _, colBuffer := range pCols.colBuffers {
-		err = colBuffer.FlushToDisk(pCols.rows, pCols.chunks)
+		err = colBuffer.FlushToDisk(pCols.rows, pCols.splits)
 		if err != nil {
 			return err
 		}

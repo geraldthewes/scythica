@@ -18,7 +18,7 @@ type SDataFrameColBuffer struct {
 	Path             string
 	PartitionKey     string
 	IsNA             string
-	rowsPerChunk     int32
+	rowsPerSplit     int32
 	DataBufferInt32  []int32
 	DataBufferFloat  []float32
 	DataBufferDouble []float64
@@ -34,8 +34,8 @@ func NewColBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer SDa
 	colBuffer.PartitionKey = pKey
 	colBuffer.Path = sdf.PartitionPath(pKey)
 	colBuffer.IsNA = sdf.Schema.Keyspace.IsNA
-	nrows := sdf.Schema.Keyspace.Rows_per_chunk
-	colBuffer.rowsPerChunk = nrows
+	nrows := sdf.Schema.Keyspace.Rows_per_split
+	colBuffer.rowsPerSplit = nrows
 	colBuffer.allocateBuffer(nrows)
 	return
 }
@@ -76,7 +76,7 @@ func (colBuffer *SDataFrameColBuffer) allocateBuffer(nrows int32) {
 	return
 }
 
-// Set Value in buffer. row is offset in chunk
+// Set Value in buffer. row is offset in split
 func (col *SDataFrameColBuffer) setCol(row int32, value string) (err error) {
 
 	err = nil
@@ -126,12 +126,12 @@ func (col *SDataFrameColBuffer) setCol(row int32, value string) (err error) {
 	return
 }
 
-// Flush current column to disk. Pass in number of rows to write and chunk count
-func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int32, chunk int32) (err error) {
+// Flush current column to disk. Pass in number of rows to write and split count
+func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int32, split int32) (err error) {
 	err = nil
 
 	var fo *os.File
-	fname := fmt.Sprintf("%s-%08x.dat", colBuffer.Column.Colname, chunk)
+	fname := fmt.Sprintf("%s-%08x.dat", colBuffer.Column.Colname, split)
 	fpath := colBuffer.Path + DF_SEP + fname
 	//fmt.Printf("write ... %s\n", fname)
 	fo, err = os.Create(fpath)
@@ -161,7 +161,7 @@ func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int32, chunk int32) (err 
 	}
 
 	// +1 because we increment after the Append
-	nrows := rows%colBuffer.rowsPerChunk + 1
+	nrows := rows%colBuffer.rowsPerSplit + 1
 
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Integer32:
