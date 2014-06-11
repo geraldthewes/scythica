@@ -57,8 +57,9 @@ func (sdf *SDataFrame) CreateSDataFrameOnDisk() (err error) {
 	return nil
 }
 
-// Create list of offsets for partition index. Aka, have list of columns that make
+// Create list of offsets for partition index for the dataframe. Aka, have list of columns that make
 // part of the key
+// Returns number of column that compose the index
 func (sdf *SDataFrame) createPartitionIndex() (pkeys int) {
 	pkeys = 0
 	for _, element := range sdf.Schema.Columns {

@@ -1,0 +1,17 @@
+columns:
+- colname: Sepal.Length
+  coltype: double
+- colname: Sepal.Width
+  coltype: double
+- colname: Petal.Length
+  coltype: double
+- colname: Petal.Width
+  coltype: double
+- colname: Species
+  coltype: factor
+  attributes: pkey
+keyspace:
+  key_size: 8192
+  nodes: 1
+  rows_per_split: 1000
+  isna: "NA"

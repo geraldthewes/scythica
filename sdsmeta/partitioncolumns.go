@@ -20,12 +20,12 @@ var nullAppender nullRowAppender
 
 // List of column buffers
 type SDataFramePartitionCols struct {
-	Sdf        *SDataFrame           // Pointer to Dataframe
-	rows       int32                 // Current count of rows
-	splits     int32                 // Current split count
-	pkey       string                // Partition key
-	path       string                // Partition path
-	colBuffers []SDataFrameColBuffer // List of column buffers
+	Sdf        *SDataFrame      // Pointer to Dataframe
+	rows       int32            // Current count of rows
+	splits     int32            // Current split count
+	pkey       string           // Partition key
+	path       string           // Partition path
+	colBuffers []columnBufferer // List of column buffers
 }
 
 // Inititalize new PartitionCols
@@ -62,10 +62,14 @@ func (pCols *SDataFramePartitionCols) CreatePartitionCols(sdf *SDataFrame, pkey 
 	if err != nil {
 		return RowAppender(&nullAppender), err
 	}
-	pCols.colBuffers = make([]SDataFrameColBuffer, len(sdf.Schema.Columns))
+	pCols.colBuffers = make([]columnBufferer, len(sdf.Schema.Columns))
 
 	for index, element := range sdf.Schema.Columns {
-		pCols.colBuffers[index] = NewColBuffer(sdf, element, pkey)
+		if element.isPartOfKey() {
+			pCols.colBuffers[index] = NewKeyColBuffer(sdf, element, pkey)
+		} else {
+			pCols.colBuffers[index] = NewColBuffer(sdf, element, pkey)
+		}
 	}
 
 	return RowAppender(pCols), nil
@@ -101,7 +105,7 @@ func (pCols *SDataFramePartitionCols) FlushToDisk() (err error) {
 	}
 
 	for _, colBuffer := range pCols.colBuffers {
-		err = colBuffer.FlushToDisk(pCols.rows, pCols.splits)
+		err = colBuffer.flushToDisk(pCols.rows, pCols.splits)
 		if err != nil {
 			return err
 		}

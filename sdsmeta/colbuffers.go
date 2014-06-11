@@ -12,6 +12,8 @@ import (
 
 const HEADER_PAD_BYTES = 128 // Used for R SEXPREC_ALIGN pad
 
+// $$$ Since now using inheritance can avoid the ugly union below
+
 // Single Buffer for a Partition of a Column
 type SDataFrameColBuffer struct {
 	Column           Sdscolumndef
@@ -24,12 +26,12 @@ type SDataFrameColBuffer struct {
 	DataBufferDouble []float64
 	DataBufferInt64  []int64
 	DataBufferByte   []byte
-	DataBufferFactor []int32
 	DataBufferBool   []bool
 }
 
 // Create new Column Partition Buffer
-func NewColBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer SDataFrameColBuffer) {
+func NewColBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer *SDataFrameColBuffer) {
+	colBuffer = new(SDataFrameColBuffer)
 	colBuffer.Column = col
 	colBuffer.PartitionKey = pKey
 	colBuffer.Path = sdf.PartitionPath(pKey)
@@ -37,17 +39,19 @@ func NewColBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer SDa
 	nrows := sdf.Schema.Keyspace.Rows_per_split
 	colBuffer.rowsPerSplit = nrows
 	colBuffer.allocateBuffer(nrows)
+	//fmt.Printf("Create SDataFrameColBuffer: %s\n", colBuffer.String())
 	return
 }
 
 // String representation of column buffer
-func (pCols *SDataFrameColBuffer) String() (s string) {
-	s = fmt.Sprintf("Column: %s (%s) Attributes: %s. Partition %s:%s",
-		pCols.Column.Colname,
-		pCols.Column.Coltype,
-		pCols.Column.Attributes,
-		pCols.PartitionKey,
-		pCols.Path)
+func (colBuffer *SDataFrameColBuffer) String() (s string) {
+	s = fmt.Sprintf("Column: %s (%s) Attributes: %s. Partition %s:%s rowsPerSplit:%d",
+		colBuffer.Column.Colname,
+		colBuffer.Column.Coltype,
+		colBuffer.Column.Attributes,
+		colBuffer.PartitionKey,
+		colBuffer.Path,
+		colBuffer.rowsPerSplit)
 	return
 }
 
@@ -77,48 +81,50 @@ func (colBuffer *SDataFrameColBuffer) allocateBuffer(nrows int32) {
 }
 
 // Set Value in buffer. row is offset in split
-func (col *SDataFrameColBuffer) setCol(row int32, value string) (err error) {
+func (colBuffer *SDataFrameColBuffer) setCol(row int32, value string) (err error) {
+
+	//fmt.Printf("setCol: row=%d value=%s Col=%s\n", row, value, colBuffer.String())
 
 	err = nil
 
-	if value == col.IsNA {
+	if value == colBuffer.IsNA {
 		// For now just ignore
 		return nil
 	}
 
-	switch SDF_ColType_Keywords[col.Column.Coltype] {
+	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Integer32:
 		var i int64
 		i, err = strconv.ParseInt(value, 10, 32)
-		col.DataBufferInt32[row] = int32(i)
+		colBuffer.DataBufferInt32[row] = int32(i)
 	case SDFK_Factor:
 		// Not implemented
 	case SDFK_Float:
 		var f float64
 		f, err = strconv.ParseFloat(value, 32)
-		col.DataBufferFloat[row] = float32(f)
+		colBuffer.DataBufferFloat[row] = float32(f)
 	case SDFK_Double:
-		col.DataBufferDouble[row], err = strconv.ParseFloat(value, 64)
+		colBuffer.DataBufferDouble[row], err = strconv.ParseFloat(value, 64)
 	case SDFK_Date:
 		//
 	case SDFK_Integer64:
-		col.DataBufferInt64[row], err = strconv.ParseInt(value, 10, 64)
+		colBuffer.DataBufferInt64[row], err = strconv.ParseInt(value, 10, 64)
 	case SDFK_Character:
 		//
 	case SDFK_Boolean:
 		//
 	default:
 		panic(fmt.Sprintf("Unknown column type %s for row %d value %s of %s\n",
-			col.Column.Coltype,
+			colBuffer.Column.Coltype,
 			row,
 			value,
-			col))
+			colBuffer))
 	}
 
 	if err != nil {
 		var serr SError
 		serr.msg = fmt.Sprintf("%s: error: %s",
-			col.String(),
+			colBuffer.String(),
 			err)
 		err = &serr
 	}
@@ -127,7 +133,7 @@ func (col *SDataFrameColBuffer) setCol(row int32, value string) (err error) {
 }
 
 // Flush current column to disk. Pass in number of rows to write and split count
-func (colBuffer *SDataFrameColBuffer) FlushToDisk(rows int32, split int32) (err error) {
+func (colBuffer *SDataFrameColBuffer) flushToDisk(rows int32, split int32) (err error) {
 	err = nil
 
 	var fo *os.File
