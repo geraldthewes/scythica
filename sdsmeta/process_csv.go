@@ -18,7 +18,8 @@ func CreateFromCsv(schema Sdsmeta,
 	location string,
 	csvFile string,
 	progress ImportProgresser,
-	noappend bool) (err error) {
+	noappend bool,
+	noheader bool) (err error) {
 	var df = NewSDataFrame(schema, location)
 
 	err = df.CreateSDataFrameOnDisk()
@@ -26,13 +27,14 @@ func CreateFromCsv(schema Sdsmeta,
 		return err
 	}
 
-	err = LoadCsv(&df, csvFile, progress, noappend)
+	err = LoadCsv(&df, csvFile, progress, noappend, noheader)
 	return err
 
 }
 
 // Check Header matches
 func matchHeader() (match bool) {
+	// $$$ Not yet implemented
 	return true
 }
 
@@ -61,10 +63,13 @@ func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 // Import CSV file in df Data Frame. Pass in an ImportProgresser to report on progress
 // the progress of the import job.
 // Pass in '-' in csvFileName to read from stdin
+// set noappend to abort on a duplicate partition
+// set noheader if file does not include headers
 func LoadCsv(df *SDataFrame,
 	csvFileName string,
 	progress ImportProgresser,
-	noappend bool) (err error) {
+	noappend bool,
+	noheader bool) (err error) {
 	// Assume partitions are contiguous
 	// Iterate over every row
 	// If partition changes - start new partition
@@ -86,13 +91,14 @@ func LoadCsv(df *SDataFrame,
 
 	csvReader := csv.NewReader(csvFile)
 
-	// Read header
-	//var header []string
-	_, err = csvReader.Read()
-	if err != nil {
-		return err
+	if !noheader {
+		_, err = csvReader.Read()
+		if err != nil {
+			return err
+		}
+		matchHeader()
 	}
-	matchHeader()
+
 	df.createPartitionIndex()
 
 	// Read data

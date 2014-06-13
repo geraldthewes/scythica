@@ -23,9 +23,11 @@ func (p importprogress) Progress(pkey string, rows int32) {
 }
 
 var noappend bool
+var noheader bool
 
 func init() {
 	flag.BoolVar(&noappend, "noappend", false, "set to true to skip abort on append")
+	flag.BoolVar(&noheader, "noheader", false, "set to true if data file has no header")
 }
 
 func main() {
@@ -46,7 +48,12 @@ func main() {
 	}
 
 	p := importprogress{}
-	err = sdsmeta.CreateFromCsv(schema, location, csvFile, p, noappend)
+	err = sdsmeta.CreateFromCsv(schema,
+		location,
+		csvFile,
+		p,
+		noappend,
+		noheader)
 	if err != nil {
 		panic(err)
 	}

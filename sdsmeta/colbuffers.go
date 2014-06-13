@@ -179,6 +179,8 @@ func (colBuffer *SDataFrameColBuffer) flushToDisk(rows int32, split int32) (err 
 		//colBuffer.DataBufferFloat = make([]float32, nrows)
 	case SDFK_Double:
 		//colBuffer.DataBufferDouble = make([]float64, nrows)
+		buff := colBuffer.DataBufferDouble[0:nrows]
+		binary.Write(out, binary.LittleEndian, buff)
 	case SDFK_Date:
 		fallthrough
 	case SDFK_Integer64:
