@@ -1,3 +1,15 @@
+/*
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+*/
+
 package sdsmeta
 
 import (
@@ -15,7 +27,7 @@ type SDataFrame struct {
 }
 
 // New empty Dataframe from schema
-func NewSDataFrame(schema Sdsmeta, location string) (sdf SDataFrame) {
+func NewDataFrame(schema Sdsmeta, location string) (sdf SDataFrame) {
 	sdf.Schema = schema
 	sdf.Location = location
 	return
@@ -23,7 +35,7 @@ func NewSDataFrame(schema Sdsmeta, location string) (sdf SDataFrame) {
 
 // Create a New Empty dataframe file structure on disk
 // Requires the directory to be empty
-func (sdf *SDataFrame) CreateSDataFrameOnDisk() (err error) {
+func (sdf *SDataFrame) CreateNewDataFrameOnDisk() (err error) {
 
 	pos := sdf.Schema.verifyColumnTypes()
 	if pos >= 0 {
@@ -31,7 +43,7 @@ func (sdf *SDataFrame) CreateSDataFrameOnDisk() (err error) {
 		e.msg = fmt.Sprintf("Invalid column type for %s in position %d",
 			sdf.Schema.Columns[pos].Colname,
 			pos)
-		return &e // $$$ Does this really work?
+		return &e
 	}
 
 	// Create Top Level Directory
@@ -96,7 +108,7 @@ func (sdf *SDataFrame) PartitionPath(pKey string) (path string) {
 }
 
 // Create a new Partition
-func (sdf *SDataFrame) CreatePartition(buffers SDataFramePartitionCols, pkey string, noappend bool) (appender RowAppender, err error) {
+func (sdf *SDataFrame) CreateNewPartition(buffers SDataFramePartitionCols, pkey string, noappend bool) (appender RowAppender, err error) {
 	appender, err = buffers.CreatePartitionCols(sdf, pkey, noappend)
 	return
 }

@@ -1,3 +1,15 @@
+/*
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+*/
+
 package sdsmeta
 
 import (
@@ -15,64 +27,65 @@ const HEADER_PAD_BYTES = 128 // Used for R SEXPREC_ALIGN pad
 // $$$ Since now using inheritance can avoid the ugly union below
 
 // Single Buffer for a Partition of a Column
-type SDataFrameColBuffer struct {
+type VectorColumnBuffer struct {
 	Column           Sdscolumndef
-	Path             string
-	PartitionKey     string
-	IsNA             string
+	path             string
+	partitionKey     string
+	isNA             string
 	rowsPerSplit     int32
-	DataBufferInt32  []int32
-	DataBufferFloat  []float32
-	DataBufferDouble []float64
-	DataBufferInt64  []int64
-	DataBufferByte   []byte
-	DataBufferBool   []bool
+	dataBufferInt32  []int32
+	dataBufferFloat  []float32
+	dataBufferDouble []float64
+	dataBufferInt64  []int64
+	dataBufferByte   []byte
+	dataBufferBool   []bool
 }
 
-// Create new Column Partition Buffer
-func NewColBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer *SDataFrameColBuffer) {
-	colBuffer = new(SDataFrameColBuffer)
+// Create new Vector Column Partition Buffer
+func NewVectorColumnBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer *VectorColumnBuffer) {
+	colBuffer = new(VectorColumnBuffer)
 	colBuffer.Column = col
-	colBuffer.PartitionKey = pKey
-	colBuffer.Path = sdf.PartitionPath(pKey)
-	colBuffer.IsNA = sdf.Schema.Keyspace.IsNA
+	colBuffer.partitionKey = pKey
+	colBuffer.path = sdf.PartitionPath(pKey)
+	colBuffer.isNA = sdf.Schema.Keyspace.IsNA
 	nrows := sdf.Schema.Keyspace.Rows_per_split
 	colBuffer.rowsPerSplit = nrows
-	colBuffer.allocateBuffer(nrows)
-	//fmt.Printf("Create SDataFrameColBuffer: %s\n", colBuffer.String())
+	colBuffer.allocateBufferSplit(nrows)
+	//fmt.Printf("Create VectorColumnBuffer: %s\n", colBuffer.String())
 	return
 }
 
 // String representation of column buffer
-func (colBuffer *SDataFrameColBuffer) String() (s string) {
+func (colBuffer *VectorColumnBuffer) String() (s string) {
 	s = fmt.Sprintf("Column: %s (%s) Attributes: %s. Partition %s:%s rowsPerSplit:%d",
 		colBuffer.Column.Colname,
 		colBuffer.Column.Coltype,
 		colBuffer.Column.Attributes,
-		colBuffer.PartitionKey,
-		colBuffer.Path,
+		colBuffer.partitionKey,
+		colBuffer.path,
 		colBuffer.rowsPerSplit)
 	return
 }
 
-func (colBuffer *SDataFrameColBuffer) allocateBuffer(nrows int32) {
+// Allocate storage for the buffer, based on max split size
+func (colBuffer *VectorColumnBuffer) allocateBufferSplit(nrows int32) {
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Integer32:
 		fallthrough
 	case SDFK_Factor:
-		colBuffer.DataBufferInt32 = make([]int32, nrows)
+		colBuffer.dataBufferInt32 = make([]int32, nrows)
 	case SDFK_Float:
-		colBuffer.DataBufferFloat = make([]float32, nrows)
+		colBuffer.dataBufferFloat = make([]float32, nrows)
 	case SDFK_Double:
-		colBuffer.DataBufferDouble = make([]float64, nrows)
+		colBuffer.dataBufferDouble = make([]float64, nrows)
 	case SDFK_Date:
 		fallthrough
 	case SDFK_Integer64:
-		colBuffer.DataBufferInt64 = make([]int64, nrows)
+		colBuffer.dataBufferInt64 = make([]int64, nrows)
 	case SDFK_Character:
-		colBuffer.DataBufferByte = make([]byte, nrows)
+		colBuffer.dataBufferByte = make([]byte, nrows)
 	case SDFK_Boolean:
-		colBuffer.DataBufferBool = make([]bool, nrows)
+		colBuffer.dataBufferBool = make([]bool, nrows)
 	default:
 		panic(fmt.Sprintf("Unknown column type %s\n",
 			colBuffer.String()))
@@ -80,14 +93,14 @@ func (colBuffer *SDataFrameColBuffer) allocateBuffer(nrows int32) {
 	return
 }
 
-// Set Value in buffer. row is offset in split
-func (colBuffer *SDataFrameColBuffer) setCol(row int32, value string) (err error) {
+// Set Value for row in column. row is offset in split
+func (colBuffer *VectorColumnBuffer) setCol(row int32, value string) (err error) {
 
 	//fmt.Printf("setCol: row=%d value=%s Col=%s\n", row, value, colBuffer.String())
 
 	err = nil
 
-	if value == colBuffer.IsNA {
+	if value == colBuffer.isNA {
 		// For now just ignore
 		return nil
 	}
@@ -96,19 +109,19 @@ func (colBuffer *SDataFrameColBuffer) setCol(row int32, value string) (err error
 	case SDFK_Integer32:
 		var i int64
 		i, err = strconv.ParseInt(value, 10, 32)
-		colBuffer.DataBufferInt32[row] = int32(i)
+		colBuffer.dataBufferInt32[row] = int32(i)
 	case SDFK_Factor:
 		// Not implemented
 	case SDFK_Float:
 		var f float64
 		f, err = strconv.ParseFloat(value, 32)
-		colBuffer.DataBufferFloat[row] = float32(f)
+		colBuffer.dataBufferFloat[row] = float32(f)
 	case SDFK_Double:
-		colBuffer.DataBufferDouble[row], err = strconv.ParseFloat(value, 64)
+		colBuffer.dataBufferDouble[row], err = strconv.ParseFloat(value, 64)
 	case SDFK_Date:
 		//
 	case SDFK_Integer64:
-		colBuffer.DataBufferInt64[row], err = strconv.ParseInt(value, 10, 64)
+		colBuffer.dataBufferInt64[row], err = strconv.ParseInt(value, 10, 64)
 	case SDFK_Character:
 		//
 	case SDFK_Boolean:
@@ -133,12 +146,12 @@ func (colBuffer *SDataFrameColBuffer) setCol(row int32, value string) (err error
 }
 
 // Flush current column to disk. Pass in number of rows to write and split count
-func (colBuffer *SDataFrameColBuffer) flushToDisk(rows int32, split int32) (err error) {
+func (colBuffer *VectorColumnBuffer) flushToDisk(rows int32, split int32) (err error) {
 	err = nil
 
 	var fo *os.File
 	fname := fmt.Sprintf("%s-%08x.dat", colBuffer.Column.Colname, split)
-	fpath := colBuffer.Path + DF_SEP + fname
+	fpath := colBuffer.path + DF_SEP + fname
 	//fmt.Printf("write ... %s\n", fname)
 	fo, err = os.Create(fpath)
 	if err != nil {
@@ -171,7 +184,7 @@ func (colBuffer *SDataFrameColBuffer) flushToDisk(rows int32, split int32) (err 
 
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Integer32:
-		buff := colBuffer.DataBufferInt32[0:nrows]
+		buff := colBuffer.dataBufferInt32[0:nrows]
 		binary.Write(out, binary.LittleEndian, buff)
 	case SDFK_Factor:
 		//
@@ -179,7 +192,7 @@ func (colBuffer *SDataFrameColBuffer) flushToDisk(rows int32, split int32) (err 
 		//colBuffer.DataBufferFloat = make([]float32, nrows)
 	case SDFK_Double:
 		//colBuffer.DataBufferDouble = make([]float64, nrows)
-		buff := colBuffer.DataBufferDouble[0:nrows]
+		buff := colBuffer.dataBufferDouble[0:nrows]
 		binary.Write(out, binary.LittleEndian, buff)
 	case SDFK_Date:
 		fallthrough

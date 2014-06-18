@@ -1,3 +1,15 @@
+/*
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+*/
+
 package sdsmeta
 
 import (
@@ -13,22 +25,22 @@ type ImportProgresser interface {
 	Progress(pKey string, rows int32)
 }
 
-// Created SDS Dataframe from CSV file
-func CreateFromCsv(schema Sdsmeta,
+// Created Dataframe from CSV file
+func CreateDataframeFromCsv(schema Sdsmeta,
 	location string,
 	csvFile string,
 	progress ImportProgresser,
 	noappend bool,
-	noheader bool) (err error) {
-	var df = NewSDataFrame(schema, location)
+	noheader bool) (df *SDataFrame, err error) {
+	var sdf = NewDataFrame(schema, location)
 
-	err = df.CreateSDataFrameOnDisk()
+	err = sdf.CreateNewDataFrameOnDisk()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = LoadCsv(&df, csvFile, progress, noappend, noheader)
-	return err
+	err = LoadFromCsv(&sdf, csvFile, progress, noappend, noheader)
+	return &sdf, err
 
 }
 
@@ -65,7 +77,7 @@ func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 // Pass in '-' in csvFileName to read from stdin
 // set noappend to abort on a duplicate partition
 // set noheader if file does not include headers
-func LoadCsv(df *SDataFrame,
+func LoadFromCsv(df *SDataFrame,
 	csvFileName string,
 	progress ImportProgresser,
 	noappend bool,
@@ -130,7 +142,7 @@ func LoadCsv(df *SDataFrame,
 			progress.Progress(pkey, appender.Rows())
 
 			pkey = npkey
-			appender, err = df.CreatePartition(buffers, pkey, noappend)
+			appender, err = df.CreateNewPartition(buffers, pkey, noappend)
 			if err != nil {
 				return err
 			}

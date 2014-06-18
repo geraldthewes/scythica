@@ -66,9 +66,9 @@ func (pCols *SDataFramePartitionCols) CreatePartitionCols(sdf *SDataFrame, pkey 
 
 	for index, element := range sdf.Schema.Columns {
 		if element.isPartOfKey() {
-			pCols.colBuffers[index] = NewKeyColBuffer(sdf, element, pkey)
+			pCols.colBuffers[index] = NewKeyColumnBuffer(sdf, element, pkey)
 		} else {
-			pCols.colBuffers[index] = NewColBuffer(sdf, element, pkey)
+			pCols.colBuffers[index] = NewVectorColumnBuffer(sdf, element, pkey)
 		}
 	}
 
