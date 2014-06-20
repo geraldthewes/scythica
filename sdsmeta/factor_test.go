@@ -24,24 +24,82 @@ func TestFactor(t *testing.T) {
 		var f factor
 		f.init()
 
-		it("new factor", func(expect Expect) {
+		it("new factor 1", func(expect Expect) {
 			expect(f.encode("One")).ToEqual(1)
 		})
 
-		it("lookup factor", func(expect Expect) {
+		it("lookup factor 1", func(expect Expect) {
 			expect(f.lookup("One")).ToEqual(1)
 		})
 
-		it("get factor 0", func(expect Expect) {
+		it("get factor 1", func(expect Expect) {
 			expect(f.get(1)).ToEqual("One")
 		})
 
-		it("new factor", func(expect Expect) {
+		it("new factor 2", func(expect Expect) {
 			expect(f.encode("Two")).ToEqual(2)
 		})
 
-		it("new factor", func(expect Expect) {
+		it("new factor 1", func(expect Expect) {
 			expect(f.encode("One")).ToEqual(1)
+		})
+
+		it("check length", func(expect Expect) {
+			expect(f.length()).ToEqual(2)
+		})
+
+	})
+
+}
+
+func TestFactorIO(t *testing.T) {
+	Desc(t, "TestFactors\n", func(it It) {
+
+		var f factor
+		f.init()
+
+		f.encode("One")
+		f.encode("Two")
+		f.encode("Three")
+
+		it("save factor", func(expect Expect) {
+			expect(f.save("factor.db")).ToNotExist()
+		})
+
+		it("check length", func(expect Expect) {
+			expect(f.length()).ToEqual(3)
+		})
+
+		var g factor
+		g.init()
+
+		it("load factor", func(expect Expect) {
+			expect(g.load("factor.db")).ToNotExist()
+		})
+
+		it("check length", func(expect Expect) {
+			expect(g.length()).ToEqual(3)
+		})
+
+		it("get factor 1", func(expect Expect) {
+			expect(g.get(1)).ToEqual("One")
+		})
+		it("lookup factor 1", func(expect Expect) {
+			expect(g.lookup("One")).ToEqual(1)
+		})
+
+		it("get factor 2", func(expect Expect) {
+			expect(g.get(2)).ToEqual("Two")
+		})
+		it("lookup factor 2", func(expect Expect) {
+			expect(g.lookup("Two")).ToEqual(2)
+		})
+
+		it("get factor 3 ", func(expect Expect) {
+			expect(g.get(3)).ToEqual("Three")
+		})
+		it("lookup factor 3", func(expect Expect) {
+			expect(g.lookup("Three")).ToEqual(3)
 		})
 
 	})

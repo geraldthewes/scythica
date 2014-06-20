@@ -12,6 +12,12 @@ Lesser General Public License for more details.
 
 package sdsmeta
 
+import (
+	"github.com/ugorji/go/codec"
+	"io"
+	"os"
+)
+
 // Factor are one based for R
 
 type factor struct {
@@ -41,4 +47,60 @@ func (f *factor) encode(s string) (index int) {
 		f.inverseIndex[s] = i
 	}
 	return i
+}
+
+func (f *factor) length() int {
+	return len(f.factors)
+}
+
+func (f *factor) save(path string) (err error) {
+	err = nil
+	var fo *os.File
+	fo, err = os.Create(path)
+	if err != nil {
+		return
+	}
+
+	defer func() {
+		if err = fo.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	var w io.Writer
+	w = io.Writer(fo)
+	var mh codec.MsgpackHandle
+	enc := codec.NewEncoder(w, &mh)
+
+	err = enc.Encode(f.factors)
+
+	return
+}
+
+func (f *factor) load(path string) (err error) {
+	err = nil
+	var fo *os.File
+	fo, err = os.Open(path)
+	if err != nil {
+		return
+	}
+
+	defer func() {
+		if err = fo.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	var r io.Reader
+	r = io.Reader(fo)
+
+	var mh codec.MsgpackHandle
+	dec := codec.NewDecoder(r, &mh)
+	err = dec.Decode(&f.factors)
+
+	for i, val := range f.factors {
+		f.inverseIndex[val] = i + 1
+	}
+
+	return
 }
