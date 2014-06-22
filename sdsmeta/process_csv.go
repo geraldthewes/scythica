@@ -39,8 +39,14 @@ func CreateDataframeFromCsv(schema Sdsmeta,
 		return nil, err
 	}
 
-	err = LoadFromCsv(&sdf, csvFile, progress, noappend, noheader)
-	return &sdf, err
+	err = LoadFromCsv(sdf, csvFile, progress, noappend, noheader)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sdf.Close()
+
+	return sdf, err
 
 }
 

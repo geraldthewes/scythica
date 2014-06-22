@@ -16,6 +16,7 @@ import (
 	"github.com/ugorji/go/codec"
 	"io"
 	"os"
+	"fmt"
 )
 
 // Factor are one based for R
@@ -25,20 +26,29 @@ type factor struct {
 	inverseIndex map[string]int
 }
 
+// Initialize factor
 func (f *factor) init() *factor {
 	f.factors = make([]string, 0)
 	f.inverseIndex = make(map[string]int)
 	return f
 }
 
+// String representation
+func (f *factor) String() string {
+	return fmt.Sprintf("Factor with %d levels\n",len(f.factors))
+}
+
+// Get factor of level i
 func (f *factor) get(i int) (val string) {
 	return f.factors[i-1]
 }
 
+// Lookup level value of factor
 func (f *factor) lookup(s string) (index int) {
 	return f.inverseIndex[s]
 }
 
+// Encode a factor value, return index
 func (f *factor) encode(s string) (index int) {
 	i, ok := f.inverseIndex[s]
 	if !ok {
@@ -49,10 +59,12 @@ func (f *factor) encode(s string) (index int) {
 	return i
 }
 
+// Number of levels in factor
 func (f *factor) length() int {
 	return len(f.factors)
 }
 
+// Store factors to file
 func (f *factor) save(path string) (err error) {
 	err = nil
 	var fo *os.File
@@ -77,6 +89,7 @@ func (f *factor) save(path string) (err error) {
 	return
 }
 
+// Load factors from file
 func (f *factor) load(path string) (err error) {
 	err = nil
 	var fo *os.File

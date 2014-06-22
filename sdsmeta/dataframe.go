@@ -24,12 +24,20 @@ type SDataFrame struct {
 	Location       string
 	partitionIndex []int // index of all partition keys
 	typeIndex      []int // index in type
+	factors        []factor // Array of factors
 }
 
 // New empty Dataframe from schema
-func NewDataFrame(schema Sdsmeta, location string) (sdf SDataFrame) {
+func NewDataFrame(schema Sdsmeta, location string) (sdf *SDataFrame) {
+	sdf = new(SDataFrame)
 	sdf.Schema = schema
 	sdf.Location = location
+	sdf.factors = make([]factor, schema.NCols)
+	for i, _ := range(sdf.factors) {
+		//elem.init()
+		sdf.factors[i].init()
+		//fmt.Print(elem.String())
+	}
 	return
 }
 
@@ -65,6 +73,15 @@ func (sdf *SDataFrame) CreateNewDataFrameOnDisk() (err error) {
 	if err != nil {
 		return err
 	}
+
+	// Create factors subdirectory
+	factorsDir := sdf.Location + DF_FACTORS_DIR
+	err = os.Mkdir(factorsDir, 0774)
+	if err != nil {
+		return err
+	}
+
+
 
 	return nil
 }
@@ -111,4 +128,22 @@ func (sdf *SDataFrame) PartitionPath(pKey string) (path string) {
 func (sdf *SDataFrame) CreateNewPartition(buffers SDataFramePartitionCols, pkey string, noappend bool) (appender RowAppender, err error) {
 	appender, err = buffers.CreatePartitionCols(sdf, pkey, noappend)
 	return
+}
+
+// Flush any open data structure
+func (sdf *SDataFrame) Close() (err error) {
+	err = nil
+	var e error
+	for i, _ := range(sdf.factors) {
+		if (SDF_ColType_Keywords[sdf.Schema.Columns[i].Coltype] == SDFK_Factor) {
+			fname := sdf.Location + DF_FACTORS_DIR + DF_SEP + sdf.Schema.Columns[i].Colname
+			e = sdf.factors[i].save(fname)
+			if (err == nil) {
+				err = e
+			}
+
+		}		
+
+	}
+	return err
 }
