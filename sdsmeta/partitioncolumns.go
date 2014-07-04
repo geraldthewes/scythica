@@ -78,7 +78,7 @@ func (pCols *SDataFramePartitionCols) CreatePartitionCols(sdf *SDataFrame, pkey 
 	case SDFK_Double:
 				pCols.colBuffers[index] = NewVectorColumnBuffer(sdf, element, pkey)
 	case SDFK_Date:
-				pCols.colBuffers[index] = NewNullColumnBuffer(sdf, element)
+				pCols.colBuffers[index] = NewDateColumnBuffer(sdf, element, pkey)
 	case SDFK_Integer64:
 				pCols.colBuffers[index] = NewNullColumnBuffer(sdf, element)
 	case SDFK_Character:

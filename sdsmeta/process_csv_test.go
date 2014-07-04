@@ -43,7 +43,13 @@ func TestCreate(t *testing.T) {
 		}
 
 		p := progresstty{}
-		_, err = CreateDataframeFromCsv(cfg, DATADS, DATA_DATA, p, false, false)
+		_, err = CreateDataframeFromCsv(cfg, 
+			DATADS, 
+			DATA_DATA, 
+			p, 
+			false, 
+			false,
+			"")
 		if err != nil {
 			panic(err)
 		}
@@ -72,7 +78,13 @@ func TestCreateIris(t *testing.T) {
 		}
 
 		p := progresstty{}
-		_, err = CreateDataframeFromCsv(cfg, IRIS_DATADS, IRIS_DATA_DATA, p, false, true)
+		_, err = CreateDataframeFromCsv(cfg, 
+			IRIS_DATADS, 
+			IRIS_DATA_DATA, 
+			p, 
+			false, 
+			true,
+			"")
 		if err != nil {
 			panic(err)
 		}
@@ -83,3 +95,76 @@ func TestCreateIris(t *testing.T) {
 	})
 
 }
+
+const IRIS_DATA_TAB = "../data/iris.tab"
+const IRIS_DATADS_TAB = "iris.tab"
+
+func TestCreateIrisTab(t *testing.T) {
+	Desc(t, "TestCreate Iris Tab Delimited\n", func(it It) {
+
+		// Delete existing directory if necessary
+		_ = os.RemoveAll(IRIS_DATADS_TAB)
+
+		// read configuration
+		cfg, err := ReadYAMLConfigurationFromFile(IRIS_DATA_CFG)
+		if err != nil {
+			panic(err)
+		}
+
+		p := progresstty{}
+		_, err = CreateDataframeFromCsv(cfg, 
+			IRIS_DATADS_TAB, 
+			IRIS_DATA_TAB, 
+			p, 
+			false, 
+			true,
+			"\t")
+		if err != nil {
+			panic(err)
+		}
+
+		it("check ncols", func(expect Expect) {
+			expect(cfg.NCols).ToEqual(5)
+		})
+	})
+
+}
+
+
+const BOS_DATA_CFG = "../data/boston.yaml"
+const BOS_DATA_DATA = "../data/boston-1970-2014.csv"
+const BOS_DATADS = "boston"
+
+
+func TestCreateBoston(t *testing.T) {
+	Desc(t, "Test Boston CSV with dates\n", func(it It) {
+
+		// Delete existing directory if necessary
+		_ = os.RemoveAll(BOS_DATADS)
+
+		// read configuration
+		cfg, err := ReadYAMLConfigurationFromFile(BOS_DATA_CFG)
+		if err != nil {
+			panic(err)
+		}
+
+		p := progresstty{}
+		_, err = CreateDataframeFromCsv(cfg, 
+			BOS_DATADS, 
+			BOS_DATA_DATA, 
+			p, 
+			false, 
+			false,
+			"")
+		if err != nil {
+			panic(err)
+		}
+
+		it("check ncols", func(expect Expect) {
+			expect(cfg.NCols).ToEqual(4)
+		})
+	})
+
+}
+
+

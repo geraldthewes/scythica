@@ -19,8 +19,53 @@ Features
 * Partitions are further broken into large splits, typically 64MB in size for efficiency
 
 
+Support Types
+-------------
+
+The following types are currently supported:
+
+* int32:32-Bit integer 
+* double: 64-Bit Double
+* factor: Strings interpreted as R factors
+* date: Date type
 
 Build Instructions
 ------------------
 
+Download recent go distrupution from the [golang site](http://golang.org)
+Latest build were done using Go 1.3
+
+You will need various version control utilities installed including
+
+* GIT
+* Mercurial
+* Bazaar
+
+Then:
+
+```
+mkdir ~/go   # Or any other path
+export GOPATH=~/go
+mkdir -p ~/go/src/github.com/geraldthewes/ 
+cd ~/go/src/github.com/geraldthewes/
+git clone https://github.com/geraldthewes/scythica.git
+cd sdsmeta
+
+go get
+go build
+go install
+
+cd ../sdscreate
+go build
+go install
+
+sudo cp sdscreate /usr/local/bin
+```
+
+
+How to use
+----------
+
+
+`sdscreate  data/boston.yaml boston.db data/boston-1970-2014.csv`
 

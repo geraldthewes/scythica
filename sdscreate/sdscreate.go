@@ -36,10 +36,12 @@ func (p importprogress) Progress(pkey string, rows int32) {
 
 var noappend bool
 var noheader bool
+var comma string
 
 func init() {
 	flag.BoolVar(&noappend, "noappend", false, "set to true to skip abort on append")
 	flag.BoolVar(&noheader, "noheader", false, "set to true if data file has no header")
+	flag.StringVar(&comma, "sep", "", "column seperator character")
 }
 
 func main() {
@@ -65,7 +67,8 @@ func main() {
 		csvFile,
 		p,
 		noappend,
-		noheader)
+		noheader,
+	        comma)
 	if err != nil {
 		panic(err)
 	}

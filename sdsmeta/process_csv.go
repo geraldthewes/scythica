@@ -15,10 +15,11 @@ package sdsmeta
 import (
 	"bytes"
 	"encoding/csv"
-	//"fmt"
+	"fmt"
 	"io"
 	"os"
 	"strings"
+"unicode/utf8"
 )
 
 type ImportProgresser interface {
@@ -31,7 +32,8 @@ func CreateDataframeFromCsv(schema Sdsmeta,
 	csvFile string,
 	progress ImportProgresser,
 	noappend bool,
-	noheader bool) (df *SDataFrame, err error) {
+	noheader bool,
+        comma string) (df *SDataFrame, err error) {
 	var sdf = NewDataFrame(schema, location)
 
 	err = sdf.CreateNewDataFrameOnDisk()
@@ -39,7 +41,7 @@ func CreateDataframeFromCsv(schema Sdsmeta,
 		return nil, err
 	}
 
-	err = LoadFromCsv(sdf, csvFile, progress, noappend, noheader)
+	err = LoadFromCsv(sdf, csvFile, progress, noappend, noheader,comma)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +85,13 @@ func createPartitionLabel(sdf *SDataFrame, row []string) (label string) {
 // Pass in '-' in csvFileName to read from stdin
 // set noappend to abort on a duplicate partition
 // set noheader if file does not include headers
+// if comma is not nil, use a seperator
 func LoadFromCsv(df *SDataFrame,
 	csvFileName string,
 	progress ImportProgresser,
 	noappend bool,
-	noheader bool) (err error) {
+	noheader bool,
+        comma string) (err error) {
 	// Assume partitions are contiguous
 	// Iterate over every row
 	// If partition changes - start new partition
@@ -108,6 +112,11 @@ func LoadFromCsv(df *SDataFrame,
 	defer csvFile.Close()
 
 	csvReader := csv.NewReader(csvFile)
+	if comma != "" {
+		rc, pos := utf8.DecodeRuneInString(comma)
+		fmt.Printf("Seperator is %#U starts at byte position %d\n", rc, pos)
+		csvReader.Comma = rc
+	}
 
 	if !noheader {
 		_, err = csvReader.Read()

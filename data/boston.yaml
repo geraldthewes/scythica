@@ -1,0 +1,15 @@
+columns:
+- colname: city
+  coltype: factor
+  attributes: pkey
+- colname: dt
+  coltype: date
+- colname: temp
+  coltype: double
+- colname: anomaly
+  coltype: double
+keyspace:
+  key_size: 8192
+  nodes: 1
+  rows_per_split: 1000
+  isna: "NA"
