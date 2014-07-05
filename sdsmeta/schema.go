@@ -54,6 +54,7 @@ const SDF_Integer32 = "int32"
 const SDF_Float = "float"
 const SDF_Double = "double"
 const SDF_Date = "date"
+const SDF_DateTime = "datetime"
 const SDF_Character = "character"
 const SDF_Factor = "factor"
 const SDF_Boolean = "boolean"
@@ -67,12 +68,14 @@ const SDFK_Character = 5
 const SDFK_Factor = 6
 const SDFK_Boolean = 7
 const SDFK_Integer64 = 8
+const SDFK_DateTime = 9
 
 var SDF_ColType_Keywords = map[string]int{
 	SDF_Integer32: SDFK_Integer32,
 	SDF_Float:     SDFK_Float,
 	SDF_Double:    SDFK_Double,
 	SDF_Date:      SDFK_Date,
+	SDF_DateTime:  SDFK_DateTime,
 	SDF_Character: SDFK_Character,
 	SDF_Factor:    SDFK_Factor,
 	SDF_Boolean:   SDFK_Boolean,

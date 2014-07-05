@@ -28,6 +28,7 @@ The following types are currently supported:
 * double: 64-Bit Double
 * factor: Strings interpreted as R factors
 * date: Date type
+* datetime: DateTime type. Format can be specified in the attribute section using the Go Time formating syntax
 
 Build Instructions
 ------------------
@@ -62,6 +63,58 @@ go install
 sudo cp sdscreate /usr/local/bin
 ```
 
+Configuration File
+------------------
+
+Configuration files are in YAML format.
+
+First section is columns. For each column specify the column name, column data type and
+ optional attributes. 
+
+Column attributes include:
+
+* pkey - Indicates the column is part of the partition key. Multiple columns can form the partition key.
+One column must be a partition key
+* pkey0p2 - Same as pkey, but column is expected to be a number, and number will be 0 padded to two digits. Useful if you have date fields that need to be part of the key that are not 0 padded
+* A go Time datetime format - such as "20060102 15:04"
+
+The keyspace section contain S-Dataset wide configuration settings
+
+* key_size - Unused at the momemnt
+* nodes - Unused at the moment
+* rows_per_split - Max number of rows to be part of a split. Should be a large number like 1000000 or more.
+* isna - Global default for NA value. 
+
+```
+columns:
+- colname: STATION
+  coltype: factor
+  attributes: pkey
+- colname: STATION_NAME
+  coltype: factor
+- colname: ELEVATION
+  coltype: double
+- colname: LATITUDE
+  coltype: double
+- colname: LONGITUDE
+  coltype: double
+- colname: DATE
+  coltype: datetime
+  attributes: "20060102 15:04"
+- colname: MEASUREMENT
+  coltype: int32
+- colname: FLAG 
+  coltype: factor
+- colname: QUALITY
+  coltype: factor
+- colname: UNITS
+  coltype: factor
+keyspace:
+  key_size: 8192
+  nodes: 1
+  rows_per_split: 1000
+  isna: "NA"
+```
 
 How to use
 ----------

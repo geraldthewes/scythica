@@ -167,4 +167,39 @@ func TestCreateBoston(t *testing.T) {
 
 }
 
+const NOAA_DATA_CFG = "../data/PRECIP_15_sample_csv.yaml"
+const NOAA_DATA_DATA = "../data/PRECIP_15_sample_csv.csv"
+const NOAA_DATADS = "noaa"
+
+
+func TestCreateNoaa(t *testing.T) {
+	Desc(t, "Test NOAA CSV with dates\n", func(it It) {
+
+		// Delete existing directory if necessary
+		_ = os.RemoveAll(NOAA_DATADS)
+
+		// read configuration
+		cfg, err := ReadYAMLConfigurationFromFile(NOAA_DATA_CFG)
+		if err != nil {
+			panic(err)
+		}
+
+		p := progresstty{}
+		_, err = CreateDataframeFromCsv(cfg, 
+			NOAA_DATADS, 
+			NOAA_DATA_DATA, 
+			p, 
+			false, 
+			false,
+			"")
+		if err != nil {
+			panic(err)
+		}
+
+		it("check ncols", func(expect Expect) {
+			expect(cfg.NCols).ToEqual(10)
+		})
+	})
+
+}
 

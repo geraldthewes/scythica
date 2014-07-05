@@ -24,8 +24,11 @@ import (
 // Single Buffer for a Partition of a Column
 // Dates are represented as an interger representing the number of days 
 // since 1970-01-01
+// DateTime are represented as an integer represening the number of seconds
+// since 1970-01-01 00:00:00
 type DateColumnBuffer struct {
 	Column           Sdscolumndef
+        format           string
 	path             string
 	partitionKey     string
 	isNA             string
@@ -37,6 +40,18 @@ type DateColumnBuffer struct {
 func NewDateColumnBuffer(sdf *SDataFrame, col Sdscolumndef, pKey string) (colBuffer *DateColumnBuffer) {
 	colBuffer = new(DateColumnBuffer)
 	colBuffer.Column = col
+	if len(col.Attributes) > 0  {
+		colBuffer.format = col.Attributes
+	} else {
+		switch SDF_ColType_Keywords[col.Coltype] {
+		case SDFK_Date:
+			colBuffer.format = "2006-01-02"
+		case SDFK_DateTime:
+			colBuffer.format = "2006-01-02 15:04:05"
+		default:
+			colBuffer.format = col.Attributes
+		}
+	}
 	colBuffer.partitionKey = pKey
 	colBuffer.path = sdf.PartitionPath(pKey)
 	colBuffer.isNA = sdf.Schema.Keyspace.IsNA
@@ -63,6 +78,8 @@ func (colBuffer *DateColumnBuffer) String() (s string) {
 func (colBuffer *DateColumnBuffer) allocateBufferSplit(nrows int32) {
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Date:
+		fallthrough
+	case SDFK_DateTime:
 		colBuffer.dataBufferInt32 = make([]int32, nrows)
 	default:
 		panic(fmt.Sprintf("Unknown column type %s\n",
@@ -86,7 +103,7 @@ func (colBuffer *DateColumnBuffer) setCol(row int32, value string) (err error) {
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Date:
 		var days int32
-		dt, err := time.Parse("2006-01-02", value)
+		dt, err := time.Parse(colBuffer.format, value)
 		if err != nil {
 			return err
 		}
@@ -94,6 +111,17 @@ func (colBuffer *DateColumnBuffer) setCol(row int32, value string) (err error) {
 		days = int32(secs/86400)
 
 		colBuffer.dataBufferInt32[row] = days
+
+	case SDFK_DateTime:
+		// Hmm. Might need to support different TZ
+		dt, err := time.Parse(colBuffer.format,value)
+		if err != nil {
+			return err
+		}
+		secs := int32(dt.Unix())
+		colBuffer.dataBufferInt32[row] = secs
+
+
 	default:
 		panic(fmt.Sprintf("Unknown column type %s for row %d value %s of %s\n",
 			colBuffer.Column.Coltype,
@@ -152,6 +180,8 @@ func (colBuffer *DateColumnBuffer) flushToDisk(rows int32, split int32) (err err
 
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Date:
+		fallthrough
+	case SDFK_DateTime:
 		buff := colBuffer.dataBufferInt32[0:nrows]
 		binary.Write(out, binary.LittleEndian, buff)
 	default:

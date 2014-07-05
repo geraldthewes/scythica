@@ -78,8 +78,6 @@ func (colBuffer *VectorColumnBuffer) allocateBufferSplit(nrows int32) {
 		colBuffer.dataBufferFloat = make([]float32, nrows)
 	case SDFK_Double:
 		colBuffer.dataBufferDouble = make([]float64, nrows)
-	case SDFK_Date:
-		fallthrough
 	case SDFK_Integer64:
 		colBuffer.dataBufferInt64 = make([]int64, nrows)
 	case SDFK_Character:
@@ -118,8 +116,6 @@ func (colBuffer *VectorColumnBuffer) setCol(row int32, value string) (err error)
 		colBuffer.dataBufferFloat[row] = float32(f)
 	case SDFK_Double:
 		colBuffer.dataBufferDouble[row], err = strconv.ParseFloat(value, 64)
-	case SDFK_Date:
-		//
 	case SDFK_Integer64:
 		colBuffer.dataBufferInt64[row], err = strconv.ParseInt(value, 10, 64)
 	case SDFK_Character:

@@ -1,0 +1,28 @@
+columns:
+- colname: STATION
+  coltype: factor
+  attributes: pkey
+- colname: STATION_NAME
+  coltype: factor
+- colname: ELEVATION
+  coltype: double
+- colname: LATITUDE
+  coltype: double
+- colname: LONGITUDE
+  coltype: double
+- colname: DATE
+  coltype: datetime
+  attributes: "20060102 15:04"
+- colname: MEASUREMENT
+  coltype: int32
+- colname: FLAG 
+  coltype: factor
+- colname: QUALITY
+  coltype: factor
+- colname: UNITS
+  coltype: factor
+keyspace:
+  key_size: 8192
+  nodes: 1
+  rows_per_split: 1000
+  isna: "NA"
