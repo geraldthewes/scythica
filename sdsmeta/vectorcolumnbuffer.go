@@ -13,11 +13,11 @@ Lesser General Public License for more details.
 package sdsmeta
 
 import (
-	//"code.google.com/p/leveldb-go/leveldb"
-	//"code.google.com/p/leveldb-go/leveldb/db"
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strconv"
 )
@@ -98,16 +98,16 @@ func (colBuffer *VectorColumnBuffer) setCol(row int32, value string) (err error)
 
 	err = nil
 
-	if value == colBuffer.isNA {
-		// For now just ignore
-		return nil
-	}
 
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Integer32:
-		var i int64
-		i, err = strconv.ParseInt(value, 10, 32)
-		colBuffer.dataBufferInt32[row] = int32(i)
+		if value == colBuffer.isNA {
+			colBuffer.dataBufferInt32[row] = math.MinInt32
+		} else {
+			var i int64
+			i, err = strconv.ParseInt(value, 10, 32)
+			colBuffer.dataBufferInt32[row] = int32(i)
+		}
 	case SDFK_Factor:
 		// Not implemented
 	case SDFK_Float:
@@ -115,7 +115,21 @@ func (colBuffer *VectorColumnBuffer) setCol(row int32, value string) (err error)
 		f, err = strconv.ParseFloat(value, 32)
 		colBuffer.dataBufferFloat[row] = float32(f)
 	case SDFK_Double:
-		colBuffer.dataBufferDouble[row], err = strconv.ParseFloat(value, 64)
+		if value == colBuffer.isNA {
+			// R's double NA - See arithmetic.c
+			//var w int32[2]
+			//w[0] = 0x7ff00000
+			//w[1] = 1954
+
+			//var rnan []byte = []byte{0x00,0x00,0xf0,0x7f,0x00,0x00,0x07,0xa2}
+			var rnan []byte = []byte{0x00,0x00,0x07,0xa2,0x00,0x00,0xf0,0x7f}
+			r := bytes.NewReader(rnan)
+			var dnan float64
+			binary.Read(r,binary.LittleEndian, &dnan)
+			colBuffer.dataBufferDouble[row] = dnan
+		} else {
+			colBuffer.dataBufferDouble[row], err = strconv.ParseFloat(value, 64)
+		}
 	case SDFK_Integer64:
 		colBuffer.dataBufferInt64[row], err = strconv.ParseInt(value, 10, 64)
 	case SDFK_Character:

@@ -51,15 +51,15 @@ columns:
 - colname: Diverted
   coltype: boolean
 - colname: CarrierDelay
-  coltype: character
+  coltype: int32
 - colname: WeatherDelay
-  coltype: character
+  coltype: int32
 - colname: NASDelay
-  coltype: character
+  coltype: int32
 - colname: SecurityDelay
-  coltype: character
+  coltype: int32
 - colname: LateAircraftDelay
-  coltype: character
+  coltype: int32
 keyspace:
   key_size: 8192
   nodes: 1

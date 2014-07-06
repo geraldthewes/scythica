@@ -16,8 +16,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"os"
-"time"
+	"time"
 )
 
 
@@ -96,8 +97,8 @@ func (colBuffer *DateColumnBuffer) setCol(row int32, value string) (err error) {
 	err = nil
 
 	if value == colBuffer.isNA {
-		// For now just ignore
-		return nil
+		colBuffer.dataBufferInt32[row] = math.MinInt32
+		return
 	}
 
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
