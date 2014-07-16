@@ -20,6 +20,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const HEADER_PAD_BYTES = 128 // Used for R SEXPREC_ALIGN pad
@@ -28,17 +29,17 @@ const HEADER_PAD_BYTES = 128 // Used for R SEXPREC_ALIGN pad
 
 // Single Buffer for a Partition of a Column
 type VectorColumnBuffer struct {
-	Column           Sdscolumndef
-	path             string
-	partitionKey     string
-	isNA             string
-	rowsPerSplit     int32
-	dataBufferInt32  []int32
-	dataBufferFloat  []float32
+	Column          Sdscolumndef
+	path            string
+	partitionKey    string
+	isNA            string
+	rowsPerSplit    int32
+	dataBufferInt32 []int32
+	//	dataBufferFloat  []float32
 	dataBufferDouble []float64
-	dataBufferInt64  []int64
-	dataBufferByte   []byte
-	dataBufferBool   []bool
+	//	dataBufferInt64  []int64
+	//	dataBufferByte   []byte
+	//	dataBufferBool   []bool
 }
 
 // Create new Vector Column Partition Buffer
@@ -75,15 +76,15 @@ func (colBuffer *VectorColumnBuffer) allocateBufferSplit(nrows int32) {
 	case SDFK_Factor:
 		colBuffer.dataBufferInt32 = make([]int32, nrows)
 	case SDFK_Float:
-		colBuffer.dataBufferFloat = make([]float32, nrows)
+		//colBuffer.dataBufferFloat = make([]float32, nrows)
 	case SDFK_Double:
 		colBuffer.dataBufferDouble = make([]float64, nrows)
 	case SDFK_Integer64:
-		colBuffer.dataBufferInt64 = make([]int64, nrows)
+		//colBuffer.dataBufferInt64 = make([]int64, nrows)
 	case SDFK_Character:
-		colBuffer.dataBufferByte = make([]byte, nrows)
-	case SDFK_Boolean:
-		colBuffer.dataBufferBool = make([]bool, nrows)
+		//colBuffer.dataBufferByte = make([]byte, nrows)
+	case SDFK_Logical:
+		colBuffer.dataBufferInt32 = make([]int32, nrows)
 	default:
 		panic(fmt.Sprintf("Unknown column type %s\n",
 			colBuffer.String()))
@@ -98,7 +99,6 @@ func (colBuffer *VectorColumnBuffer) setCol(row int32, value string) (err error)
 
 	err = nil
 
-
 	switch SDF_ColType_Keywords[colBuffer.Column.Coltype] {
 	case SDFK_Integer32:
 		if value == colBuffer.isNA {
@@ -111,9 +111,9 @@ func (colBuffer *VectorColumnBuffer) setCol(row int32, value string) (err error)
 	case SDFK_Factor:
 		// Not implemented
 	case SDFK_Float:
-		var f float64
-		f, err = strconv.ParseFloat(value, 32)
-		colBuffer.dataBufferFloat[row] = float32(f)
+		//var f float64
+		//f, err = strconv.ParseFloat(value, 32)
+		//colBuffer.dataBufferFloat[row] = float32(f)
 	case SDFK_Double:
 		if value == colBuffer.isNA {
 			// R's double NA - See arithmetic.c
@@ -121,21 +121,32 @@ func (colBuffer *VectorColumnBuffer) setCol(row int32, value string) (err error)
 			//w[0] = 0x7ff00000
 			//w[1] = 1954
 
-			//var rnan []byte = []byte{0x00,0x00,0xf0,0x7f,0x00,0x00,0x07,0xa2}
-			var rnan []byte = []byte{0x00,0x00,0x07,0xa2,0x00,0x00,0xf0,0x7f}
+			var rnan []byte = []byte{0x00, 0x00, 0x07, 0xa2, 0x00, 0x00, 0xf0, 0x7f}
 			r := bytes.NewReader(rnan)
 			var dnan float64
-			binary.Read(r,binary.LittleEndian, &dnan)
+			binary.Read(r, binary.LittleEndian, &dnan)
 			colBuffer.dataBufferDouble[row] = dnan
 		} else {
 			colBuffer.dataBufferDouble[row], err = strconv.ParseFloat(value, 64)
 		}
 	case SDFK_Integer64:
-		colBuffer.dataBufferInt64[row], err = strconv.ParseInt(value, 10, 64)
+		//colBuffer.dataBufferInt64[row], err = strconv.ParseInt(value, 10, 64)
 	case SDFK_Character:
 		//
-	case SDFK_Boolean:
-		//
+	case SDFK_Logical:
+		// False is f, False, 0
+		var v int32
+		v = 1
+		if value == colBuffer.isNA {
+			v = math.MinInt32
+		} else if strings.EqualFold(value, "f") {
+			v = 0
+		} else if strings.EqualFold(value, "false") {
+			v = 0
+		} else if value == "0" {
+			v = 0
+		}
+		colBuffer.dataBufferInt32[row] = v
 	default:
 		panic(fmt.Sprintf("Unknown column type %s for row %d value %s of %s\n",
 			colBuffer.Column.Coltype,
@@ -210,8 +221,9 @@ func (colBuffer *VectorColumnBuffer) flushToDisk(rows int32, split int32) (err e
 		//colBuffer.DataBufferInt64 = make([]int64, nrows)
 	case SDFK_Character:
 		//colBuffer.DataBufferByte = make([]byte, nrows)
-	case SDFK_Boolean:
-		//colBuffer.DataBufferBool = make([]bool, nrows)
+	case SDFK_Logical:
+		buff := colBuffer.dataBufferInt32[0:nrows]
+		binary.Write(out, binary.LittleEndian, buff)
 	default:
 		panic(fmt.Sprintf("Unknown column type %s\n",
 			colBuffer.String()))

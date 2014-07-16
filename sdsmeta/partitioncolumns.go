@@ -72,27 +72,25 @@ func (pCols *SDataFramePartitionCols) CreatePartitionCols(sdf *SDataFrame, pkey 
 			case SDFK_Integer32:
 				pCols.colBuffers[index] = NewVectorColumnBuffer(sdf, element, pkey)
 			case SDFK_Factor:
-				pCols.colBuffers[index] = NewFactorColumnBuffer(sdf, element, pkey,&sdf.factors[index])
-	case SDFK_Float:
+				pCols.colBuffers[index] = NewFactorColumnBuffer(sdf, element, pkey, &sdf.factors[index])
+			case SDFK_Float:
 				pCols.colBuffers[index] = NewNullColumnBuffer(sdf, element)
-	case SDFK_Double:
+			case SDFK_Double:
 				pCols.colBuffers[index] = NewVectorColumnBuffer(sdf, element, pkey)
-	case SDFK_Date:
+			case SDFK_Date:
 				pCols.colBuffers[index] = NewDateColumnBuffer(sdf, element, pkey)
-	case SDFK_DateTime:
+			case SDFK_DateTime:
 				pCols.colBuffers[index] = NewDateColumnBuffer(sdf, element, pkey)
-	case SDFK_Integer64:
+			case SDFK_Integer64:
 				pCols.colBuffers[index] = NewNullColumnBuffer(sdf, element)
-	case SDFK_Character:
+			case SDFK_Character:
 				pCols.colBuffers[index] = NewNullColumnBuffer(sdf, element)
-	case SDFK_Boolean:
-				pCols.colBuffers[index] = NewNullColumnBuffer(sdf, element)
-	default:
-		panic(fmt.Sprintf("Unknown column type %s\n",
-			element.Colname))
-	}
-
-
+			case SDFK_Logical:
+				pCols.colBuffers[index] = NewVectorColumnBuffer(sdf, element, pkey)
+			default:
+				panic(fmt.Sprintf("Unknown column type %s\n",
+					element.Colname))
+			}
 
 		}
 	}

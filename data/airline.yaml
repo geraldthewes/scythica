@@ -45,11 +45,11 @@ columns:
 - colname: TaxiOut
   coltype: int32
 - colname: Cancelled
-  coltype: boolean
+  coltype: logical
 - colname: CancellationCode
   coltype: factor
 - colname: Diverted
-  coltype: boolean
+  coltype: logical
 - colname: CarrierDelay
   coltype: int32
 - colname: WeatherDelay

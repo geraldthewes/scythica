@@ -57,7 +57,7 @@ const SDF_Date = "date"
 const SDF_DateTime = "datetime"
 const SDF_Character = "character"
 const SDF_Factor = "factor"
-const SDF_Boolean = "boolean"
+const SDF_Logical = "logical"
 const SDF_Integer64 = "int64"
 
 const SDFK_Integer32 = 1
@@ -66,7 +66,7 @@ const SDFK_Double = 3
 const SDFK_Date = 4
 const SDFK_Character = 5
 const SDFK_Factor = 6
-const SDFK_Boolean = 7
+const SDFK_Logical = 7
 const SDFK_Integer64 = 8
 const SDFK_DateTime = 9
 
@@ -78,7 +78,7 @@ var SDF_ColType_Keywords = map[string]int{
 	SDF_DateTime:  SDFK_DateTime,
 	SDF_Character: SDFK_Character,
 	SDF_Factor:    SDFK_Factor,
-	SDF_Boolean:   SDFK_Boolean,
+	SDF_Logical:   SDFK_Logical,
 	SDF_Integer64: SDFK_Integer64}
 
 const DF_SCHEMA = "/schema.cfg"
