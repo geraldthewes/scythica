@@ -42,6 +42,10 @@ You will need various version control utilities installed including
 * Mercurial
 * Bazaar
 
+```
+sudo apt-get install bzr
+```
+
 Then:
 
 ```
@@ -50,7 +54,7 @@ export GOPATH=~/go
 mkdir -p ~/go/src/github.com/geraldthewes/ 
 cd ~/go/src/github.com/geraldthewes/
 git clone https://github.com/geraldthewes/scythica.git
-cd sdsmeta
+cd scythica/sdsmeta
 
 go get
 go build
